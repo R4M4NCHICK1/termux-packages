@@ -2,9 +2,12 @@ TERMUX_PKG_HOMEPAGE=https://valgrind.org/
 TERMUX_PKG_DESCRIPTION="Instrumentation framework for building dynamic analysis tools"
 TERMUX_PKG_LICENSE="GPL-2.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=3.18.1
-TERMUX_PKG_SRCURL=ftp://sourceware.org/pub/valgrind/valgrind-${TERMUX_PKG_VERSION}.tar.bz2
-TERMUX_PKG_SHA256=00859aa13a772eddf7822225f4b46ee0d39afbe071d32778da4d99984081f7f5
+TERMUX_PKG_VERSION="3.22.0"
+TERMUX_PKG_REVISION=1
+TERMUX_PKG_SRCURL=http://sourceware.org/pub/valgrind/valgrind-${TERMUX_PKG_VERSION}.tar.bz2
+TERMUX_PKG_SHA256=c811db5add2c5f729944caf47c4e7a65dcaabb9461e472b578765dd7bf6d2d4c
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_BUILD_DEPENDS="binutils-cross"
 TERMUX_PKG_BREAKS="valgrind-dev"
 TERMUX_PKG_REPLACES="valgrind-dev"
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="--with-tmpdir=$TERMUX_PREFIX/tmp"
@@ -23,14 +26,14 @@ termux_step_pre_configure() {
 		# http://lists.busybox.net/pipermail/buildroot/2013-November/082270.html:
 		# "valgrind uses inline assembly that is not Thumb compatible":
 		CFLAGS=${CFLAGS/-mthumb/}
+		# ```
+		# <inline asm>:1:41: error: expected '%<type>' or "<type>"
+		# .pushsection ".debug_gdb_scripts", "MS",@progbits,1
+		#                                         ^
+		# ```
+		# See also https://github.com/llvm/llvm-project/issues/24438.
+		termux_setup_no_integrated_as
 	fi
 
 	autoreconf -fi
-}
-
-termux_step_post_massage() {
-	termux_download https://github.com/Lzhiyong/termux-ndk/raw/902f483485b4/patches/align_fix.py \
-		$TERMUX_PKG_CACHEDIR/align_fix.py \
-		83579beef5f0899300b2f1cb7cfad25c3ee2c90089f9b7eb83ce7472d0e730bd
-	python3 $TERMUX_PKG_CACHEDIR/align_fix.py bin/valgrind
 }

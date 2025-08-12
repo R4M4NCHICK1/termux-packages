@@ -3,10 +3,10 @@ TERMUX_PKG_DESCRIPTION="Nim programming language compiler"
 TERMUX_PKG_LICENSE="MIT"
 TERMUX_PKG_LICENSE_FILE="copying.txt"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=1.6.6
+TERMUX_PKG_VERSION=2.0.4
 TERMUX_PKG_SRCURL=https://nim-lang.org/download/nim-$TERMUX_PKG_VERSION.tar.xz
-TERMUX_PKG_SHA256=67b111ce6f3861503b9fcc1cae59fc34d0122566d3ecfef3a064a2174121a452
-TERMUX_PKG_DEPENDS="clang, git, libandroid-glob, openssl-1.1"
+TERMUX_PKG_SHA256=71526bd07439dc8e378fa1a6eb407eda1298f1f3d4df4476dca0e3ca3cbe3f09
+TERMUX_PKG_DEPENDS="clang, git, libandroid-glob, openssl"
 TERMUX_PKG_HOSTBUILD=true
 TERMUX_PKG_BUILD_IN_SRC=true
 
@@ -40,7 +40,6 @@ termux_step_make() {
 	sed -i "s%\@LDFLAGS\@%${LDFLAGS}%g" config/nim.cfg
 	sed -i "s%\@CPPFLAGS\@%${CPPFLAGS}%g" config/nim.cfg
 
-	find -name "stdlib_osproc.nim.c" | xargs -n 1 sed -i 's',"/system/bin/sh\"\,\ 14","${TERMUX_PREFIX}/bin/sh\"\,\ 38",'g'
 	PATH=$TERMUX_PKG_HOSTBUILD_DIR/bin:$PATH
 
 	if [ $NIM_ARCH = "amd64" ]; then
@@ -56,7 +55,7 @@ termux_step_make() {
 			koch) nim_flags="--opt:size" ;;
 			*) nim_flags= ;;
 		esac
-		nim --cc:clang --clang.exe=$CC --clang.linkerexe=$CC $nim_flags --define:termux -d:release -d:sslVersion=1.1 --os:android --cpu:$NIM_ARCH  -t:"$CPPFLAGS $CFLAGS" -l:"$LDFLAGS -landroid-glob" -d:tempDir:$TERMUX_PREFIX/tmp c $(basename $cmd).nim
+		nim --cc:clang --clang.exe=$CC --clang.linkerexe=$CC $nim_flags --define:termux -d:release -d:sslVersion=3 --os:android --cpu:$NIM_ARCH  -t:"$CPPFLAGS $CFLAGS" -l:"$LDFLAGS -landroid-glob" -d:tempDir:$TERMUX_PREFIX/tmp c $(basename $cmd).nim
 		popd
 	done
 }

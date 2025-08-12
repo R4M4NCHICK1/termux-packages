@@ -1,27 +1,35 @@
 TERMUX_PKG_HOMEPAGE=https://neovim.io/
 TERMUX_PKG_DESCRIPTION="Ambitious Vim-fork focused on extensibility and agility (nvim)"
-TERMUX_PKG_LICENSE="Apache-2.0"
+TERMUX_PKG_LICENSE="Apache-2.0, VIM License"
+TERMUX_PKG_LICENSE_FILE="LICENSE.txt"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION="0.7.0"
+TERMUX_PKG_VERSION="0.9.5"
 TERMUX_PKG_REVISION=1
 TERMUX_PKG_SRCURL=https://github.com/neovim/neovim/archive/v${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=792a9c55d5d5f4a5148d475847267df309d65fb20f05523f21c1319ea8a6c7df
+TERMUX_PKG_SHA256=fe74369fc30a32ec7a086b1013acd0eacd674e7570eb1acc520a66180c9e9719
 TERMUX_PKG_AUTO_UPDATE=true
-TERMUX_PKG_DEPENDS="libiconv, libuv, luv, libmsgpack, libandroid-support, libvterm, libtermkey, libluajit, libunibilium, libtreesitter"
+TERMUX_PKG_UPDATE_VERSION_REGEXP="^\d+\.\d+\.\d+$"
+TERMUX_PKG_DEPENDS="libiconv, libuv, luv, libmsgpack, libandroid-support, libvterm (>= 1:0.3-0), libtermkey, libluajit, libunibilium, libtreesitter"
 TERMUX_PKG_HOSTBUILD=true
 
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 -DENABLE_JEMALLOC=OFF
 -DGETTEXT_MSGFMT_EXECUTABLE=$(command -v msgfmt)
 -DGETTEXT_MSGMERGE_EXECUTABLE=$(command -v msgmerge)
--DGPERF_PRG=$TERMUX_PKG_HOSTBUILD_DIR/deps/usr/bin/gperf
--DLUA_PRG=$TERMUX_PKG_HOSTBUILD_DIR/deps/usr/bin/luajit
 -DPKG_CONFIG_EXECUTABLE=$(command -v pkg-config)
 -DXGETTEXT_PRG=$(command -v xgettext)
 -DLUAJIT_INCLUDE_DIR=$TERMUX_PREFIX/include/luajit-2.1
 -DCOMPILE_LUA=OFF
 "
 TERMUX_PKG_CONFFILES="share/nvim/sysinit.vim"
+
+termux_pkg_auto_update() {
+	# Get the latest release tag:
+	local tag
+	tag="$(termux_github_api_get_tag "${TERMUX_PKG_SRCURL}" \
+		latest-regex "${TERMUX_PKG_UPDATE_VERSION_REGEXP}")"
+	termux_pkg_upgrade_version "$tag"
+}
 
 _patch_luv() {
 	# git submodule update --init deps/lua-compat-5.3 failed
@@ -43,10 +51,10 @@ termux_step_host_build() {
 
 	mkdir -p $TERMUX_PKG_HOSTBUILD_DIR/deps
 	cd $TERMUX_PKG_HOSTBUILD_DIR/deps
-	cmake $TERMUX_PKG_SRCDIR/third-party
+	cmake $TERMUX_PKG_SRCDIR/cmake.deps
 
-	make -j 1 ||
-		(_patch_luv $TERMUX_PKG_HOSTBUILD_DIR/deps && make -j 1)
+	make -j 1 \
+		|| (_patch_luv $TERMUX_PKG_HOSTBUILD_DIR/deps && make -j 1)
 
 	cd $TERMUX_PKG_SRCDIR
 

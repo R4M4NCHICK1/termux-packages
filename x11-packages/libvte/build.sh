@@ -1,16 +1,35 @@
 TERMUX_PKG_HOMEPAGE=https://gitlab.gnome.org/GNOME/vte/
 TERMUX_PKG_DESCRIPTION="Virtual Terminal library"
-TERMUX_PKG_LICENSE="GPL-3.0"
+TERMUX_PKG_LICENSE="LGPL-3.0, GPL-3.0, MIT"
+TERMUX_PKG_LICENSE_FILE="COPYING.GPL3, COPYING.LGPL3, COPYING.XTERM"
 TERMUX_PKG_MAINTAINER="@termux"
-# Do not update to 0.64.x or later with no caution; may break xfce4-terminal
-TERMUX_PKG_VERSION=2:0.62.2
-TERMUX_PKG_REVISION=2
-TERMUX_PKG_SRCURL=https://download.gnome.org/sources/vte/${TERMUX_PKG_VERSION:2:4}/vte-${TERMUX_PKG_VERSION:2}.tar.xz
-TERMUX_PKG_SHA256=b0300bbcf0c02df5812a10a3cb8e4fff723bab92c08c97a0a90c167cf543aff0
-TERMUX_PKG_DEPENDS="fribidi, gtk3, libgnutls, libicu, pcre2"
+TERMUX_PKG_VERSION="2:0.74.2"
+TERMUX_PKG_REVISION=1
+TERMUX_PKG_SRCURL=https://gitlab.gnome.org/GNOME/vte/-/archive/${TERMUX_PKG_VERSION:2}/vte-${TERMUX_PKG_VERSION:2}.tar.bz2
+#TERMUX_PKG_SRCURL=https://ftp.gnome.org/pub/GNOME/sources/vte/${_MAJOR_VERSION}/vte-${_VERSION}.tar.xz
+TERMUX_PKG_SHA256=2a1162738c9bccfac1bb801125c1889d3980d857499909439803cf1def4c25d1
+TERMUX_PKG_DEPENDS="atk, fribidi, gdk-pixbuf, gtk3, gtk4, libc++, libcairo, libgnutls, libicu, pango, pcre2, zlib"
+TERMUX_PKG_BUILD_DEPENDS="g-ir-scanner, glib-cross"
 TERMUX_PKG_RM_AFTER_INSTALL="lib/locale"
-TERMUX_PKG_EXTRA_CONFIGURE_ARGS="-Dgir=false -Dvapi=false"
+TERMUX_PKG_DISABLE_GIR=false
+TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
+-Dgir=true
+-Dvapi=false
+"
 
 termux_step_pre_configure() {
-	CXXFLAGS+=" -DLINE_MAX=_POSIX2_LINE_MAX"
+	TERMUX_PKG_VERSION=. termux_setup_gir
+
+	local _WRAPPER_BIN="${TERMUX_PKG_BUILDDIR}/_wrapper/bin"
+	mkdir -p "${_WRAPPER_BIN}"
+	if [[ "${TERMUX_ON_DEVICE_BUILD}" == "false" ]]; then
+		sed "s|^export PKG_CONFIG_LIBDIR=|export PKG_CONFIG_LIBDIR=${TERMUX_PREFIX}/opt/glib/cross/lib/x86_64-linux-gnu/pkgconfig:|" \
+			"${TERMUX_STANDALONE_TOOLCHAIN}/bin/pkg-config" \
+			> "${_WRAPPER_BIN}/pkg-config"
+		chmod +x "${_WRAPPER_BIN}/pkg-config"
+		export PKG_CONFIG="${_WRAPPER_BIN}/pkg-config"
+	fi
+	export PATH="${_WRAPPER_BIN}:${PATH}"
+
+	CPPFLAGS+=" -DLINE_MAX=_POSIX2_LINE_MAX -Wno-cast-function-type-strict -Wno-deprecated-declarations -Wno-cast-function-type"
 }

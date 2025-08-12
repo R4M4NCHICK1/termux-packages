@@ -1,20 +1,14 @@
 TERMUX_PKG_HOMEPAGE=https://www.libsdl.org
-TERMUX_PKG_DESCRIPTION="A library for portable low-level access to a video framebuffer, audio output, mouse, and keyboard"
-TERMUX_PKG_LICENSE="LGPL-2.1"
+TERMUX_PKG_DESCRIPTION="Simple DirectMedia Layer (SDL) sdl12-compat"
+TERMUX_PKG_LICENSE="ZLIB"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=1.2.15
-TERMUX_PKG_REVISION=45
-TERMUX_PKG_SRCURL=https://www.libsdl.org/release/SDL-${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=d6d316a793e5e348155f0dd93b979798933fb98aa1edebcc108829d6474aad00
-TERMUX_PKG_DEPENDS="libandroid-glob, libflac, libogg, libsndfile, libvorbis, libx11, libxext, libxrandr, libxrender, pulseaudio"
-TERMUX_PKG_BUILD_DEPENDS="glu, mesa"
-TERMUX_PKG_RECOMMENDS="mesa"
+TERMUX_PKG_VERSION=1.2.60
+TERMUX_PKG_SRCURL=https://github.com/libsdl-org/sdl12-compat/archive/refs/tags/release-${TERMUX_PKG_VERSION}.tar.gz
+TERMUX_PKG_SHA256=029fa24fe9e0d6a15b94f4737a2d3ed3144c5ef920eb82b4c6b30248eb94518b
+TERMUX_PKG_DEPENDS="sdl2"
 TERMUX_PKG_CONFLICTS="libsdl"
 TERMUX_PKG_REPLACES="libsdl"
-
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
---disable-assembly
---disable-nasm
---disable-pth
---enable-video-opengl
+-DSDL12TESTS=OFF
 "
+TERMUX_PKG_NO_STATICSPLIT=true

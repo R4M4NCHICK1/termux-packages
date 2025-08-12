@@ -2,23 +2,12 @@ TERMUX_PKG_HOMEPAGE=https://github.com/coin-or/Osi
 TERMUX_PKG_DESCRIPTION="An abstract base class to a generic linear programming (LP) solver"
 TERMUX_PKG_LICENSE="EPL-2.0"
 TERMUX_PKG_MAINTAINER="@termux"
-_COMMIT=01ada0ee8d423b4401ac04418c8300a04dd2beaf
-TERMUX_PKG_VERSION=2022.01.01
-TERMUX_PKG_SRCURL=https://github.com/coin-or/Osi.git
-TERMUX_PKG_GIT_BRANCH=master
+TERMUX_PKG_VERSION=1:0.108.8
+TERMUX_PKG_SRCURL=https://github.com/coin-or/Osi/archive/refs/tags/releases/${TERMUX_PKG_VERSION#*:}.tar.gz
+TERMUX_PKG_SHA256=8b01a49190cb260d4ce95aa7e3948a56c0917b106f138ec0a8544fadca71cf6a
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_UPDATE_METHOD=repology
 TERMUX_PKG_DEPENDS="libc++, libcoinor-utils"
-
-termux_step_post_get_source() {
-	git fetch --unshallow
-	git checkout $_COMMIT
-
-	local version="$(git log -1 --format=%cs | sed 's/-/./g')"
-	if [ "$version" != "$TERMUX_PKG_VERSION" ]; then
-		echo -n "ERROR: The specified version \"$TERMUX_PKG_VERSION\""
-		echo " is different from what is expected to be: \"$version\""
-		return 1
-	fi
-}
 
 termux_step_pre_configure() {
 	LDFLAGS+=" $($CC -print-libgcc-file-name)"

@@ -2,23 +2,32 @@ TERMUX_PKG_HOMEPAGE=https://www.samba.org/
 TERMUX_PKG_DESCRIPTION="SMB/CIFS fileserver"
 TERMUX_PKG_LICENSE="GPL-3.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=4.14.13
+TERMUX_PKG_VERSION=4.16.11
 TERMUX_PKG_REVISION=1
 TERMUX_PKG_SRCURL=https://download.samba.org/pub/samba/samba-${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=e1df792818a17d8d21faf33580d32939214694c92b84fb499464210d86a7ff75
-TERMUX_PKG_DEPENDS="libbsd, libcap, libcrypt, libgnutls, libiconv, libicu, libpopt, libtalloc, libtirpc, ncurses, openssl, readline, zlib"
+TERMUX_PKG_SHA256=5218878cdcc01aa8e83d2c84ad16c5f37a01ea5e1a93f640f9ee282053c46e12
+TERMUX_PKG_DEPENDS="krb5, libandroid-execinfo, libandroid-spawn, libbsd, libcap, libcrypt, libgnutls, libiconv, libicu, libpopt, libtalloc, libtasn1, libtirpc, ncurses, openssl, readline, tdb-tools, zlib"
 TERMUX_PKG_BUILD_DEPENDS="e2fsprogs"
 TERMUX_PKG_BUILD_IN_SRC=true
 
+# These files are already present in the package tdb-tools
+TERMUX_PKG_RM_AFTER_INSTALL="
+bin/tdbbackup
+bin/tdbdump
+bin/tdbrestore
+bin/tdbtool
+share/man/man8/tdbbackup.8.gz
+share/man/man8/tdbdump.8.gz
+share/man/man8/tdbrestore.8.gz
+share/man/man8/tdbtool.8.gz
+"
+
+termux_step_pre_configure() {
+	CPPFLAGS+=" -D_FILE_OFFSET_BITS=64"
+	LDFLAGS+=" -landroid-spawn"
+}
+
 termux_step_configure() {
-	:
-}
-
-termux_step_make() {
-	:
-}
-
-termux_step_make_install() {
 	local _auth_modules='auth_server,auth_netlogond,auth_script'
 	local _pdb_modules='pdb_tdbsam,pdb_smbpasswd,pdb_wbc_sam'
 	local _vfs_modules='vfs_fake_perms,!vfs_recycle,!vfs_btrfs,!vfs_glusterfs_fuse'
@@ -76,11 +85,13 @@ Checking whether the realpath function allows a NULL argument: OK
 Checking for ftruncate extend: OK
 getcwd takes a NULL argument: OK
 Checking for readlink breakage: NO
+Checking for gnutls fips mode support: NO
+Checking whether the WRFILE -keytab is supported: OK
 EOF
 
 	USING_SYSTEM_ASN1_COMPILE=1 ASN1_COMPILE=/usr/bin/asn1_compile \
 	USING_SYSTEM_COMPILE_ET=1 COMPILE_ET=/usr/bin/compile_et \
-	CFLAGS="-D__ANDROID_API__=24 -D__USE_FILE_OFFSET64=1" \
+	CFLAGS="$CFLAGS" LINKFLAGS="$CFLAGS $LDFLAGS" \
 	./buildtools/bin/waf configure \
 		--jobs="$TERMUX_MAKE_PROCESSES" \
 		--bundled-libraries='!asn1_compile,!compile_et' \
@@ -107,7 +118,6 @@ EOF
 		--without-ads \
 		--without-automount \
 		--without-dmapi \
-		--without-dnsupdate \
 		--without-fam \
 		--without-gettext \
 		--with-gpfs=/dev/null \
@@ -117,10 +127,10 @@ EOF
 		--without-ldb-lmdb \
 		--without-libarchive \
 		--without-lttng \
-		--without-ntvfs-fileserver \
 		--without-pam \
 		--without-quotas \
 		--without-regedit \
+		--with-system-mitkrb5 "$TERMUX_PREFIX" \
 		--without-systemd \
 		--without-utmp \
 		--without-winbind \
@@ -129,10 +139,21 @@ EOF
 		# --disable-fault-handling \
 		# --disable-rpath-private-install \
 		# --with-logfilebase="$TERMUX_PREFIX/tmp/log/samba" \
-                (cat cross-answers.txt | grep UNKNOWN && return 1)
+		(cat cross-answers.txt | grep UNKNOWN && return 1)
+}
 
+
+termux_step_make() {
+	./buildtools/bin/waf build --jobs="$TERMUX_MAKE_PROCESSES"
+}
+
+termux_step_make_install() {
 	./buildtools/bin/waf install --jobs="$TERMUX_MAKE_PROCESSES"
+}
 
+termux_step_post_make_install() {
+	install -Dm700 -t "$TERMUX_PREFIX/bin" \
+		"$TERMUX_PKG_SRCDIR/examples/scripts/nmb/findsmb"
 	mkdir -p "$TERMUX_PREFIX/share/doc/samba"
 	sed -e "s|@TERMUX_PREFIX@|${TERMUX_PREFIX}|g" \
 		"$TERMUX_PKG_BUILDER_DIR/smb.conf.example.in" \
@@ -141,10 +162,10 @@ EOF
 
 termux_step_post_massage() {
 	# keep empty dirs which were deleted in massage
-	mkdir -p "$TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/var/lib/samba/bind-dns" "$TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/var/lib/samba/private"
+	mkdir -p "var/lib/samba/bind-dns" "var/lib/samba/private"
 	for dir in cache lock log run; do
-		mkdir -p "$TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/var/$dir/samba"
+		mkdir -p "var/$dir/samba"
 	done
 	# 755 - as opposed to 700 - because testparm throws up a warning otherwise
-	chmod 755 "$TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/var/lock/samba" "$TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/var/lib/samba" "$TERMUX_PKG_MASSAGEDIR/$TERMUX_PREFIX/var/cache/samba"
+	chmod 755 "var/lock/samba" "var/lib/samba" "var/cache/samba"
 }

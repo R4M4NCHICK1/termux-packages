@@ -2,14 +2,10 @@ TERMUX_PKG_HOMEPAGE=http://www.littlecms.com/
 TERMUX_PKG_DESCRIPTION="Color management library"
 TERMUX_PKG_LICENSE="MIT"
 TERMUX_PKG_MAINTAINER="@termux"
-_SOVERSION=2
-TERMUX_PKG_VERSION=2.13.1
-TERMUX_PKG_REVISION=1
+TERMUX_PKG_VERSION="2.16"
 TERMUX_PKG_SRCURL=https://github.com/mm2/Little-CMS/archive/refs/tags/lcms${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=6f84c942ecde1b4852b5a051894502ac8c98d010acb3400dec958c6db1bc94ef
+TERMUX_PKG_SHA256=cb4bf968aa66e3d5d16d1f094a99595966d4330cbd6be46c66129f2747ad2b0d
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_UPDATE_METHOD=repology
 TERMUX_PKG_BREAKS="littlecms-dev"
 TERMUX_PKG_REPLACES="littlecms-dev"
-
-termux_step_post_make_install() {
-	ln -sf liblcms2.so $TERMUX_PREFIX/lib/liblcms2.so.${_SOVERSION}
-}

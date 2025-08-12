@@ -1,6 +1,5 @@
-diff -uNr boinc-client_release-7.18-7.18.1/_autosetup boinc-client_release-7.18-7.18.1.mod/_autosetup
---- boinc-client_release-7.18-7.18.1/_autosetup	2021-08-03 23:52:19.000000000 +0800
-+++ boinc-client_release-7.18-7.18.1.mod/_autosetup	2021-12-27 20:03:46.335967627 +0800
+--- a/_autosetup
++++ b/_autosetup
 @@ -19,7 +19,7 @@
  check_version()
  {

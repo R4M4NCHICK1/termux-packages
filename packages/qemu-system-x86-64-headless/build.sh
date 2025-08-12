@@ -2,11 +2,11 @@ TERMUX_PKG_HOMEPAGE=https://www.qemu.org
 TERMUX_PKG_DESCRIPTION="A generic and open source machine emulator and virtualizer (headless)"
 TERMUX_PKG_LICENSE="GPL-2.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=1:7.0.0
+TERMUX_PKG_VERSION=1:8.0.2
 TERMUX_PKG_REVISION=1
 TERMUX_PKG_SRCURL=https://download.qemu.org/qemu-${TERMUX_PKG_VERSION:2}.tar.xz
-TERMUX_PKG_SHA256=f6b375c7951f728402798b0baabb2d86478ca53d44cedbefabbe1c46bf46f839
-TERMUX_PKG_DEPENDS="glib, libbz2, libc++, libcurl, libgnutls, libiconv, libjpeg-turbo, liblzo, libnettle, libnfs, libpixman, libpng, libspice-server, libssh, libusb, libusbredir, ncurses, pulseaudio, qemu-common, resolv-conf, zlib, zstd"
+TERMUX_PKG_SHA256=f060abd435fbe6794125e2c398568ffc3cfa540042596907a8b18edca34cf6a5
+TERMUX_PKG_DEPENDS="glib, libbz2, libcurl, libgmp, libgnutls, libiconv, libjpeg-turbo, liblzo, libnettle, libnfs, libpixman, libpng, libslirp, libspice-server, libssh, libusb, libusbredir, ncurses, pulseaudio, qemu-common, resolv-conf, zlib, zstd"
 
 # Required by configuration script, but I can't find any binary that uses it.
 TERMUX_PKG_BUILD_DEPENDS="libtasn1"
@@ -15,6 +15,29 @@ TERMUX_PKG_CONFLICTS="qemu-system-x86_64-headless"
 TERMUX_PKG_REPLACES="qemu-system-x86_64-headless"
 TERMUX_PKG_PROVIDES="qemu-system-x86_64-headless"
 TERMUX_PKG_BUILD_IN_SRC=true
+
+termux_step_pre_configure() {
+	# Workaround for https://github.com/termux/termux-packages/issues/12261.
+	if [ $TERMUX_ARCH = "aarch64" ]; then
+		rm -f $TERMUX_PKG_BUILDDIR/_lib
+		mkdir -p $TERMUX_PKG_BUILDDIR/_lib
+
+		cd $TERMUX_PKG_BUILDDIR
+		mkdir -p _setjmp-aarch64
+		pushd _setjmp-aarch64
+		mkdir -p private
+		local s
+		for s in $TERMUX_PKG_BUILDER_DIR/setjmp-aarch64/{setjmp.S,private-*.h}; do
+			local f=$(basename ${s})
+			cp ${s} ./${f/-//}
+		done
+		$CC $CFLAGS $CPPFLAGS -I. setjmp.S -c
+		$AR cru $TERMUX_PKG_BUILDDIR/_lib/libandroid-setjmp.a setjmp.o
+		popd
+
+		LDFLAGS+=" -L$TERMUX_PKG_BUILDDIR/_lib -l:libandroid-setjmp.a"
+	fi
+}
 
 termux_step_configure() {
 	termux_setup_ninja
@@ -66,7 +89,7 @@ termux_step_configure() {
 		--enable-coroutine-pool \
 		--audio-drv-list=pa \
 		--enable-trace-backends=nop \
-		--enable-guest-agent \
+		--disable-guest-agent \
 		--enable-gnutls \
 		--enable-nettle \
 		--disable-sdl \
@@ -78,7 +101,7 @@ termux_step_configure() {
 		--enable-vnc \
 		--disable-vnc-sasl \
 		--enable-vnc-jpeg \
-		--enable-vnc-png \
+		--enable-png \
 		--disable-xen \
 		--disable-xen-pci-passthrough \
 		--enable-virtfs \
@@ -100,6 +123,7 @@ termux_step_configure() {
 		--enable-dmg \
 		--enable-parallels \
 		--enable-qed \
+		--enable-slirp \
 		--enable-spice \
 		--enable-libusb \
 		--enable-usb-redir \
@@ -110,7 +134,7 @@ termux_step_configure() {
 
 termux_step_post_make_install() {
 	local i
-	for i in aarch64 arm i386 riscv32 riscv64 x86_64; do
+	for i in aarch64 arm i386 m68k ppc ppc64 riscv32 riscv64 x86_64; do
 		ln -sfr \
 			"${TERMUX_PREFIX}"/share/man/man1/qemu.1 \
 			"${TERMUX_PREFIX}"/share/man/man1/qemu-system-${i}.1

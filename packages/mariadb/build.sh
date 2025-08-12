@@ -2,18 +2,17 @@ TERMUX_PKG_HOMEPAGE=https://mariadb.org
 TERMUX_PKG_DESCRIPTION="A drop-in replacement for mysql server"
 TERMUX_PKG_LICENSE="GPL-2.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=2:10.6.7
-TERMUX_PKG_REVISION=1
-TERMUX_PKG_SRCURL=http://ftp.hosteurope.de/mirror/archive.mariadb.org/mariadb-${TERMUX_PKG_VERSION:2}/source/mariadb-${TERMUX_PKG_VERSION:2}.tar.gz
-TERMUX_PKG_SHA256=75ee0f1f865a765fc461ab165419417a719e308faba784b2c97ecbe9e4b4b2c5
-# MariaDB 10.6.x does not support OpenSSL 3.0:
-#   https://github.com/MariaDB/server/commit/c9beef43154a199bfcd9f71049c011a2ed77ca74
-#   https://jira.mariadb.org/browse/MDEV-25785
-TERMUX_PKG_DEPENDS="libc++, libiconv, liblzma, ncurses, libedit, openssl-1.1, pcre2, libcrypt, libandroid-support, libandroid-glob, zlib, liblz4"
+TERMUX_PKG_VERSION="2:11.3.2"
+TERMUX_PKG_SRCURL=https://mirror.netcologne.de/mariadb/mariadb-${TERMUX_PKG_VERSION#*:}/source/mariadb-${TERMUX_PKG_VERSION#*:}.tar.gz
+TERMUX_PKG_SHA256=5570778f0a2c27af726c751cda1a943f3f8de96d11d107791be5b44a0ce3fb5c
+TERMUX_PKG_DEPENDS="libandroid-support, libc++, libcrypt, libedit, liblz4, liblzma, ncurses, openssl, pcre2, zlib"
 TERMUX_PKG_BREAKS="mariadb-dev"
+TERMUX_PKG_CONFLICTS="mysql"
 TERMUX_PKG_REPLACES="mariadb-dev"
 TERMUX_PKG_SERVICE_SCRIPT=("mysqld" "exec mysqld --basedir=$TERMUX_PREFIX --datadir=$TERMUX_PREFIX/var/lib/mysql 2>&1")
-
+TERMUX_PKG_HOSTBUILD=true
+TERMUX_CMAKE_BUILD="Unix Makefiles"
+TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 -DBISON_EXECUTABLE=$(command -v bison)
 -DGETCONF=$(command -v getconf)
@@ -56,16 +55,11 @@ TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 -DWITH_INNODB_LZO=OFF
 -DWITH_INNODB_SNAPPY=OFF
 -DWITH_UNIT_TESTS=OFF
+-DSTAT_EMPTY_STRING_BUG_EXITCODE=0
+-DLSTAT_FOLLOWS_SLASHED_SYMLINK_EXITCODE=0
+-DMASK_LONGDOUBLE_EXITCODE=1
 -DINSTALL_SYSCONFDIR=$TERMUX_PREFIX/etc
--DOPENSSL_INCLUDE_DIR=$TERMUX_PREFIX/include/openssl-1.1
--DOPENSSL_LIBRARIES=$TERMUX_PREFIX/lib/openssl-1.1
--DOPENSSL_CRYPTO_LIBRARY=$TERMUX_PREFIX/lib/openssl-1.1/libcrypto.so.1.1
--DOPENSSL_SSL_LIBRARY=$TERMUX_PREFIX/lib/openssl-1.1/libssl.so.1.1
 "
-TERMUX_PKG_HOSTBUILD=true
-TERMUX_CMAKE_BUILD="Unix Makefiles"
-TERMUX_PKG_CONFLICTS="mysql"
-
 TERMUX_PKG_RM_AFTER_INSTALL="
 bin/mysqltest*
 share/man/man1/mysql-test-run.pl.1
@@ -73,11 +67,6 @@ share/mysql/mysql-test
 mysql-test
 sql-bench
 "
-
-# i686 build fails due to:
-#  /home/builder/.termux-build/mariadb/src/include/my_pthread.h:822:10: error: use of undeclared identifier 'my_atomic_add32'
-#    (void) my_atomic_add32_explicit(value, 1, MY_MEMORY_ORDER_RELAXED);
-TERMUX_PKG_BLACKLISTED_ARCHES="i686"
 
 termux_step_host_build() {
 	termux_setup_cmake
@@ -102,16 +91,9 @@ termux_step_pre_configure() {
 		CPPFLAGS+=" -D__off64_t_defined"
 	fi
 
-	if [ $TERMUX_ARCH = "i686" ]; then
-		# Avoid undefined reference to __atomic_load_8:
-		CFLAGS+=" -latomic"
-	fi
 	sed -i 's/^\s*END[(][)]/ENDIF()/g' $TERMUX_PKG_SRCDIR/libmariadb/cmake/ConnectorName.cmake
 
-	CFLAGS="-I$TERMUX_PREFIX/include/openssl-1.1 $CFLAGS"
-	CPPFLAGS="-I$TERMUX_PREFIX/include/openssl-1.1 $CPPFLAGS"
-	CXXFLAGS="-I$TERMUX_PREFIX/include/openssl-1.1 $CXXFLAGS"
-	LDFLAGS="-L$TERMUX_PREFIX/lib/openssl-1.1 -Wl,-rpath=$TERMUX_PREFIX/lib/openssl-1.1 $LDFLAGS"
+	export PATH=$TERMUX_PKG_HOSTBUILD_DIR/strings:$PATH
 }
 
 termux_step_post_massage() {
@@ -122,7 +104,7 @@ termux_step_create_debscripts() {
 	echo "if [ ! -e "$TERMUX_PREFIX/var/lib/mysql" ]; then" > postinst
 	echo "  echo 'Initializing mysql data directory...'" >> postinst
 	echo "  mkdir -p $TERMUX_PREFIX/var/lib/mysql" >> postinst
-	echo "  $TERMUX_PREFIX/bin/mysql_install_db --user=\$(whoami) --datadir=$TERMUX_PREFIX/var/lib/mysql --basedir=$TERMUX_PREFIX" >> postinst
+	echo "  $TERMUX_PREFIX/bin/mysql_install_db --user=root --auth-root-authentication-method=normal --datadir=$TERMUX_PREFIX/var/lib/mysql --basedir=$TERMUX_PREFIX" >> postinst
 	echo "fi" >> postinst
 	echo "exit 0" >> postinst
 	chmod 0755 postinst

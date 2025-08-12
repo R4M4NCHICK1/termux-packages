@@ -1,15 +1,15 @@
 TERMUX_PKG_HOMEPAGE=https://tmux.github.io/
 TERMUX_PKG_DESCRIPTION="Terminal multiplexer"
 TERMUX_PKG_LICENSE="ISC"
-TERMUX_PKG_MAINTAINER="@termux"
+TERMUX_PKG_MAINTAINER="Joshua Kahn @TomJo2000"
+TERMUX_PKG_VERSION=3.4
+TERMUX_PKG_SRCURL=https://github.com/tmux/tmux/archive/refs/tags/${TERMUX_PKG_VERSION}.tar.gz
+TERMUX_PKG_SHA256=ec7ddf021a0a1d3778862feb845fd0c02759dcdb37ba5380ba4e0038164f7187
+TERMUX_PKG_AUTO_UPDATE=false
 # Link against libandroid-support for wcwidth(), see https://github.com/termux/termux-packages/issues/224
 TERMUX_PKG_DEPENDS="ncurses, libevent, libandroid-support, libandroid-glob"
-TERMUX_PKG_VERSION=3.2a
-TERMUX_PKG_REVISION=2
-TERMUX_PKG_SRCURL="https://github.com/tmux/tmux/archive/${TERMUX_PKG_VERSION}.tar.gz"
-TERMUX_PKG_SHA256=497bc4ee16f10b53b161bf0253b6f9e20cd0f86c5d0104f149212cb0778ae13a
-TERMUX_PKG_AUTO_UPDATE=true
-TERMUX_PKG_EXTRA_CONFIGURE_ARGS="--disable-static"
+# Set default TERM to screen-256color, see: https://raw.githubusercontent.com/tmux/tmux/3.3/CHANGES
+TERMUX_PKG_EXTRA_CONFIGURE_ARGS="--disable-static --with-TERM=screen-256color --enable-sixel"
 TERMUX_PKG_BUILD_IN_SRC=true
 
 TERMUX_PKG_CONFFILES="etc/tmux.conf etc/profile.d/tmux.sh"
@@ -32,7 +32,6 @@ termux_step_post_make_install() {
 		05e79fc1ecb27637dc9d6a52c315b8f207cf010cdcee9928805525076c9020ae
 }
 
-termux_step_create_debscripts() {
-	echo "#!$TERMUX_PREFIX/bin/sh" > postinst
-	echo "mkdir -p $TERMUX_PREFIX/var/run" >> postinst
+termux_step_post_massage() {
+	mkdir -p "${TERMUX_PKG_MASSAGEDIR}/${TERMUX_PREFIX}"/var/run
 }

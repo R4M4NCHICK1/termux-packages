@@ -1,39 +1,46 @@
 TERMUX_PKG_HOMEPAGE=https://mpv.io/
 TERMUX_PKG_DESCRIPTION="Command-line media player"
-TERMUX_PKG_LICENSE="GPL-3.0"
-TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=0.33.0
-TERMUX_PKG_REVISION=8
+# License: GPL-2.0-or-later
+TERMUX_PKG_LICENSE="GPL-2.0"
+TERMUX_PKG_MAINTAINER="Joshua Kahn @TomJo2000"
+# Update both mpv and mpv-x to the same version in one PR.
+TERMUX_PKG_VERSION="0.38.0"
 TERMUX_PKG_SRCURL=https://github.com/mpv-player/mpv/archive/v${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=f1b9baf5dc2eeaf376597c28a6281facf6ed98ff3d567e3955c95bf2459520b4
-TERMUX_PKG_DEPENDS="ffmpeg, libandroid-glob, libandroid-shmem, libarchive, libass, libdrm, littlecms, libjpeg-turbo, libcaca, liblua52, libx11, libxext, libxinerama, libxss, libxrandr, openal-soft, pulseaudio, zlib"
+TERMUX_PKG_SHA256=86d9ef40b6058732f67b46d0bbda24a074fae860b3eaae05bab3145041303066
+TERMUX_PKG_AUTO_UPDATE=false
+TERMUX_PKG_DEPENDS="ffmpeg, libandroid-glob, libandroid-shmem, libarchive, libass, libbluray, libcaca, libdrm, libdvdnav, libiconv, libjpeg-turbo, liblua52, libsixel, libuchardet, libx11, libxext, libxinerama, libxpresent, libxrandr, libxss, libzimg, littlecms, openal-soft, pipewire, pulseaudio, rubberband, zlib, libplacebo"
 TERMUX_PKG_CONFLICTS="mpv"
 TERMUX_PKG_REPLACES="mpv"
+TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
+-Dlibmpv=true
+-Dlua=lua52
+-Ddvdnav=enabled
+-Dvapoursynth=disabled
+-Dopenal=enabled
+-Dgbm=disabled
+-Dgl=disabled
+-Dvdpau=disabled
+-Dvaapi=disabled
+-Dvulkan=disabled
+-Dxv=disabled
+-Dandroid-media-ndk=disabled
+"
+
+termux_step_post_get_source() {
+	# Version guard
+	local ver_m=$(. $TERMUX_SCRIPTDIR/packages/mpv/build.sh; echo ${TERMUX_PKG_VERSION#*:})
+	local ver_x=${TERMUX_PKG_VERSION#*:}
+	if [ "${ver_m}" != "${ver_x}" ]; then
+		termux_error_exit "Version mismatch between mpv and mpv-x."
+	fi
+}
 
 termux_step_pre_configure() {
 	LDFLAGS+=" -landroid-glob -landroid-shmem"
+	sed -i "s/host_machine.system() == 'android'/false/" ${TERMUX_PKG_SRCDIR}/meson.build
 }
 
-termux_step_make_install() {
-	cd $TERMUX_PKG_SRCDIR
-
-	./bootstrap.py
-
-	./waf configure \
-		--prefix=$TERMUX_PREFIX \
-		--disable-gl \
-		--enable-jpeg \
-		--enable-lcms2 \
-		--enable-libarchive \
-		--enable-lua \
-		--enable-pulse \
-		--enable-openal \
-		--enable-caca \
-		--disable-alsa \
-		--enable-x11 \
-		--disable-wayland
-
-	./waf -v install
+termux_step_post_make_install() {
 	install -Dm600 -t $TERMUX_PREFIX/etc/mpv/ $TERMUX_PKG_BUILDER_DIR/mpv.conf
 	install -Dm600 -t $TERMUX_PREFIX/share/mpv/scripts/ $TERMUX_PKG_SRCDIR/TOOLS/lua/*
 }

@@ -10,14 +10,45 @@ CURL_COMMON_OPTIONS=(
   --user "${APTLY_API_AUTH}"
   --write-out "|%{http_code}"
 )
+
+CURL_ADDITIONAL_OPTIONS=()
+
+# Warn and dont push instead of error out if no auth provided
+check_login() {
+  export APTLY_API_AUTH_WARN=${APTLY_API_AUTH_WARN:=0}
+  local e=0
+  if [[ -z "${APTLY_API_AUTH}" ]]; then
+    e=1
+    if [[ "$((APTLY_API_AUTH_WARN & 1))" == 0 ]]; then
+      echo "[$(date +%H:%M:%S)] Warning: No APTLY_API_AUTH provided"
+      APTLY_API_AUTH_WARN=$((APTLY_API_AUTH_WARN | 1))
+    fi
+  fi
+  if [[ -z "${GPG_PASSPHRASE}" ]]; then
+    e=1
+    if [[ "$((APTLY_API_AUTH_WARN & 2))" == 0 ]]; then
+      echo "[$(date +%H:%M:%S)] Warning: No GPG_PASSPHRASE provided"
+      APTLY_API_AUTH_WARN=$((APTLY_API_AUTH_WARN | 2))
+    fi
+  fi
+  if [[ "${e}" != 0 ]]; then
+    if [[ "$((APTLY_API_AUTH_WARN & 4))" == 0 ]]; then
+      echo "[$(date +%H:%M:%S)] Warning: You are most likely on a forked repo. Upload will be cancelled. Fix this if incorrect."
+      APTLY_API_AUTH_WARN=$((APTLY_API_AUTH_WARN | 4))
+    fi
+    return 1
+  fi
+}
+
 # Function for deleting temporary directory with uploaded files from
 # the server.
 aptly_delete_dir() {
+  ! check_login && return 0
   echo "[$(date +%H:%M:%S)] Deleting uploads temporary directory..."
 
   curl_response=$(
     curl \
-      "${CURL_COMMON_OPTIONS[@]}" \
+      "${CURL_COMMON_OPTIONS[@]}" "${CURL_ADDITIONAL_OPTIONS[@]}" \
       --request DELETE \
       ${REPOSITORY_URL}/files/${REPOSITORY_NAME}-${GITHUB_SHA}
   )
@@ -30,9 +61,10 @@ aptly_delete_dir() {
 }
 
 aptly_upload_file() {
+  ! check_login && return 0
   local filename="$1"
   curl_response=$(curl \
-    "${CURL_COMMON_OPTIONS[@]}" \
+    "${CURL_COMMON_OPTIONS[@]}" "${CURL_ADDITIONAL_OPTIONS[@]}" \
     --request POST \
     --form file=@${filename} \
     ${REPOSITORY_URL}/files/${REPOSITORY_NAME}-${GITHUB_SHA} || true
@@ -58,10 +90,11 @@ aptly_upload_file() {
 }
 
 aptly_add_to_repo() {
+  ! check_login && return 0
   echo "[$(date +%H:%M:%S)] Adding packages to repository '$REPOSITORY_NAME'..."
   curl_response=$(
     curl \
-      "${CURL_COMMON_OPTIONS[@]}" \
+      "${CURL_COMMON_OPTIONS[@]}" "${CURL_ADDITIONAL_OPTIONS[@]}" \
       --max-time 300 \
       --request POST \
       ${REPOSITORY_URL}/repos/${REPOSITORY_NAME}/file/${REPOSITORY_NAME}-${GITHUB_SHA} || true
@@ -91,10 +124,11 @@ aptly_add_to_repo() {
 }
 
 aptly_publish_repo() {
+  ! check_login && return 0
   echo "[$(date +%H:%M:%S)] Publishing repository changes..."
   curl_response=$(
     curl \
-      "${CURL_COMMON_OPTIONS[@]}" \
+      "${CURL_COMMON_OPTIONS[@]}" "${CURL_ADDITIONAL_OPTIONS[@]}" \
       --max-time 300 \
       --header 'Content-Type: application/json' \
       --request PUT \

@@ -1,6 +1,6 @@
 --- a/scripts/mysql_install_db.sh
 +++ b/scripts/mysql_install_db.sh
-@@ -472,47 +472,8 @@
+@@ -492,47 +492,8 @@
      fi
      chmod 700 "$dir"
    fi
@@ -23,7 +23,7 @@
  
 -if test -n "$user"
 -then
--  if test -z "$srcdir" -a "$in_rpm" -eq 0
+-  if test -z "$srcdir" -a "$in_rpm" -eq 0 -a -d "$pamtooldir/auth_pam_tool_dir"
 -  then
 -    chown 0 "$pamtooldir/auth_pam_tool_dir/auth_pam_tool" && \
 -    chmod 04755 "$pamtooldir/auth_pam_tool_dir/auth_pam_tool"
@@ -45,6 +45,6 @@
 -  args="$args --user=$user"
 -fi
 -
- if test -n "$group"
- then
-   args="$args --group=$group"
+ #To be enabled if/when we enable --group as an option to mariadbd
+ #if test -n "$group"
+ #then

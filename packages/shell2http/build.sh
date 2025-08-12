@@ -2,9 +2,9 @@ TERMUX_PKG_HOMEPAGE=https://github.com/msoap/shell2http
 TERMUX_PKG_DESCRIPTION="Executing shell commands via HTTP server"
 TERMUX_PKG_LICENSE="MIT"
 TERMUX_PKG_MAINTAINER="Krishna kanhaiya @kcubeterm"
-TERMUX_PKG_VERSION=1.14.1
+TERMUX_PKG_VERSION="1.17.0"
 TERMUX_PKG_SRCURL=https://github.com/msoap/shell2http/archive/v${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=bc09d026a3d947f4706f9c25fb07b70b01b355d0bca4f5af469ae2f79e0c5121
+TERMUX_PKG_SHA256=17fab67e34e767accfbc59ab504971c704f54d79b57a023e6b5efa5556994624
 TERMUX_PKG_AUTO_UPDATE=true
 
 termux_step_make() {

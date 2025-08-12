@@ -2,15 +2,29 @@ TERMUX_PKG_HOMEPAGE=https://github.com/Canop/broot
 TERMUX_PKG_DESCRIPTION="A better way to navigate directories"
 TERMUX_PKG_LICENSE="MIT"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=1.8.0
-TERMUX_PKG_REVISION=1
-TERMUX_PKG_SRCURL=https://github.com/Canop/broot/archive/v${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=baa107a2cd458c9f4eda9cafa8fac54570918efafaadfc34df43442f7cd237b9
+TERMUX_PKG_VERSION="1.38.0"
+TERMUX_PKG_SRCURL=https://github.com/Canop/broot/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz
+TERMUX_PKG_SHA256=1805d8acbf5b31124370a19c1f855a50c7fb929359ef689d9b68957bd95aa000
 TERMUX_PKG_DEPENDS="libgit2"
 TERMUX_PKG_BUILD_IN_SRC=true
+TERMUX_PKG_AUTO_UPDATE=true
+
+termux_step_pre_configure() {
+	termux_setup_rust
+
+	: "${CARGO_HOME:=$HOME/.cargo}"
+	export CARGO_HOME
+
+	cargo fetch --target "${CARGO_TARGET_NAME}"
+
+	local f
+	for f in $CARGO_HOME/registry/src/*/libgit2-sys-*/build.rs; do
+		sed -i -E 's/\.range_version\(([^)]*)\.\.[^)]*\)/.atleast_version(\1)/g' "${f}"
+	done
+	sed -i '/trash/d' $TERMUX_PKG_SRCDIR/Cargo.toml
+}
 
 termux_step_make() {
-	termux_setup_rust
 	cargo build --jobs $TERMUX_MAKE_PROCESSES --target $CARGO_TARGET_NAME --release
 
 	mkdir -p build

@@ -1,8 +1,7 @@
-diff -uNr boinc-client_release-7.18-7.18.1/lib/gui_rpc_client.cpp boinc-client_release-7.18-7.18.1.mod/lib/gui_rpc_client.cpp
---- boinc-client_release-7.18-7.18.1/lib/gui_rpc_client.cpp	2021-08-03 23:52:19.000000000 +0800
-+++ boinc-client_release-7.18-7.18.1.mod/lib/gui_rpc_client.cpp	2021-12-29 19:11:49.145461911 +0800
+--- a/lib/gui_rpc_client.cpp
++++ b/lib/gui_rpc_client.cpp
 @@ -416,7 +416,7 @@
-     char msg_buf[1024];
+     char msg_buf[5120];
      FILE* f = fopen(GUI_RPC_PASSWD_FILE, "r");
      if (!f) {
 -#if defined(__linux__)

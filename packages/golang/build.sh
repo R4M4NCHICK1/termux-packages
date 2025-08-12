@@ -2,12 +2,14 @@ TERMUX_PKG_HOMEPAGE=https://golang.org/
 TERMUX_PKG_DESCRIPTION="Go programming language compiler"
 TERMUX_PKG_LICENSE="BSD 3-Clause"
 TERMUX_PKG_MAINTAINER="@termux"
-_MAJOR_VERSION=1.18.2
+_MAJOR_VERSION=1.22
 # Use the ~ deb versioning construct in the future:
-TERMUX_PKG_VERSION=3:${_MAJOR_VERSION}
-TERMUX_PKG_SRCURL=https://storage.googleapis.com/golang/go${_MAJOR_VERSION}.src.tar.gz
-TERMUX_PKG_SHA256=2c44d03ea2c34092137ab919ba602f2c261a038d08eb468528a3f3a28e5667e2
+TERMUX_PKG_VERSION=3:${_MAJOR_VERSION}.2
+TERMUX_PKG_SRCURL=https://storage.googleapis.com/golang/go${TERMUX_PKG_VERSION#*:}.src.tar.gz
+TERMUX_PKG_SHA256=374ea82b289ec738e968267cac59c7d5ff180f9492250254784b2044e90df5a9
 TERMUX_PKG_DEPENDS="clang"
+TERMUX_PKG_ANTI_BUILD_DEPENDS="clang"
+TERMUX_PKG_RECOMMENDS="resolv-conf"
 TERMUX_PKG_NO_STATICSPLIT=true
 
 termux_step_post_get_source() {
@@ -27,18 +29,18 @@ termux_step_make_install() {
 	# Unset PKG_CONFIG to avoid the path being hardcoded into src/cmd/cgo/zdefaultcc.go,
 	# see https://github.com/termux/termux-packages/issues/3505.
 	env CC_FOR_TARGET=$CC \
-	    CXX_FOR_TARGET=$CXX \
-	    CC=gcc \
-	    GO_LDFLAGS="-extldflags=-pie" \
-	    GO_LDSO="$LINKER" \
-	    GOROOT_BOOTSTRAP=$GOROOT \
-	    GOROOT_FINAL=$TERMUX_GODIR \
-	    PKG_CONFIG= \
-	    ./make.bash
+		CXX_FOR_TARGET=$CXX \
+		CC=gcc \
+		GO_LDFLAGS="-extldflags=-pie" \
+		GO_LDSO="$LINKER" \
+		GOROOT_BOOTSTRAP=$GOROOT \
+		GOROOT_FINAL=$TERMUX_GODIR \
+		PKG_CONFIG= \
+		./make.bash
 
 	cd ..
 	rm -Rf $TERMUX_GODIR
-	mkdir -p $TERMUX_GODIR/{bin,src,doc,lib,pkg/tool/$TERMUX_GOLANG_DIRNAME,pkg/include,pkg/${TERMUX_GOLANG_DIRNAME}}
+	mkdir -p $TERMUX_GODIR/{bin,src,doc,lib,pkg/tool/$TERMUX_GOLANG_DIRNAME,pkg/include}
 	cp bin/$TERMUX_GOLANG_DIRNAME/{go,gofmt} $TERMUX_GODIR/bin/
 	ln -sfr $TERMUX_GODIR/bin/go $TERMUX_PREFIX/bin/go
 	ln -sfr $TERMUX_GODIR/bin/gofmt $TERMUX_PREFIX/bin/gofmt
@@ -48,7 +50,6 @@ termux_step_make_install() {
 	cp -Rf doc/* $TERMUX_GODIR/doc/
 	cp pkg/include/* $TERMUX_GODIR/pkg/include/
 	cp -Rf lib/* $TERMUX_GODIR/lib
-	cp -Rf pkg/${TERMUX_GOLANG_DIRNAME}/* $TERMUX_GODIR/pkg/${TERMUX_GOLANG_DIRNAME}/
 	cp -Rf misc/ $TERMUX_GODIR/
 }
 

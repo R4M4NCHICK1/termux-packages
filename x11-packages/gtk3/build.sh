@@ -2,41 +2,44 @@ TERMUX_PKG_HOMEPAGE=https://www.gtk.org/
 TERMUX_PKG_DESCRIPTION="GObject-based multi-platform GUI toolkit"
 TERMUX_PKG_LICENSE="LGPL-2.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=3.24.34
+TERMUX_PKG_VERSION="3.24.41"
+TERMUX_PKG_REVISION=1
 TERMUX_PKG_SRCURL=https://gitlab.gnome.org/GNOME/gtk/-/archive/$TERMUX_PKG_VERSION/gtk-$TERMUX_PKG_VERSION.tar.gz
-TERMUX_PKG_SHA256=85f302c25618d73d4ef00824c2b21c0e74a5231ac8805f153890a78f4bb446e5
-TERMUX_PKG_BUILD_IN_SRC=true
-
-TERMUX_PKG_DEPENDS="adwaita-icon-theme, atk, coreutils, desktop-file-utils, fontconfig, freetype, fribidi, gdk-pixbuf, glib, glib-bin, gtk-update-icon-cache, harfbuzz, libcairo, libepoxy, libxcomposite, libxcursor, libxdamage, libxfixes, libxi, libxinerama, libxrandr, pango, shared-mime-info, ttf-dejavu"
-TERMUX_PKG_BUILD_DEPENDS="xorgproto"
+TERMUX_PKG_SHA256=0ce1fa6cde05762cfb93a4064d4d211350944a77ebc954542d76e552d2cd0894
+TERMUX_PKG_DEPENDS="adwaita-icon-theme, atk, coreutils, desktop-file-utils, fontconfig, fribidi, gdk-pixbuf, glib, glib-bin, gtk-update-icon-cache, harfbuzz, libcairo, libepoxy, libwayland, libxcomposite, libxcursor, libxdamage, libxfixes, libxi, libxinerama, libxkbcommon, libxrandr, pango, shared-mime-info, ttf-dejavu"
+TERMUX_PKG_BUILD_DEPENDS="g-ir-scanner, glib-cross, libwayland-protocols, xorgproto"
 TERMUX_PKG_CONFLICTS="libgtk3"
 TERMUX_PKG_REPLACES="libgtk3"
-
+TERMUX_PKG_DISABLE_GIR=false
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
---disable-introspection
---enable-xinerama
---enable-xfixes
---enable-xcomposite
---enable-xdamage
---enable-x11-backend
---disable-wayland-backend
+-Dbroadway_backend=true
+-Dexamples=false
+-Dintrospection=true
+-Dman=true
+-Dprint_backends=file,lpr
+-Dtests=false
+-Dwayland_backend=true
+-Dx11_backend=true
+-Dxinerama=yes
 "
 
-TERMUX_PKG_RM_AFTER_INSTALL="share/glib-2.0/schemas/gschemas.compiled"
-
 termux_step_pre_configure() {
-	# prevent permission denied on build scripts
-	find . -type f | xargs chmod u+x
+	termux_setup_cmake
+	TERMUX_PKG_VERSION=. termux_setup_gir
+	termux_setup_ninja
 
-	# prevent build failure by using host's glib-compile-resources.
-	cp -f /usr/bin/glib-compile-resources "${TERMUX_PREFIX}/bin/glib-compile-resources"
-
-	NOCONFIGURE=1 ./autogen.sh
-}
-
-termux_step_post_massage() {
-	# don't store updated glib-compile-resources.
-	rm -f "${TERMUX_PKG_MASSAGEDIR}/${TERMUX_PREFIX}/bin/glib-compile-resources"
+	local _WRAPPER_BIN="${TERMUX_PKG_BUILDDIR}/_wrapper/bin"
+	mkdir -p "${_WRAPPER_BIN}"
+	if [[ "${TERMUX_ON_DEVICE_BUILD}" == "false" ]]; then
+		sed \
+			-e "s|^export PKG_CONFIG_LIBDIR=|export PKG_CONFIG_LIBDIR=${TERMUX_PREFIX}/opt/glib/cross/lib/x86_64-linux-gnu/pkgconfig:|" \
+			-e "s|^export PKG_CONFIG_LIBDIR=|export PKG_CONFIG_LIBDIR=${TERMUX_PREFIX}/opt/libwayland/cross/lib/x86_64-linux-gnu/pkgconfig:|" \
+			"${TERMUX_STANDALONE_TOOLCHAIN}/bin/pkg-config" \
+			> "${_WRAPPER_BIN}/pkg-config"
+		chmod +x "${_WRAPPER_BIN}/pkg-config"
+		export PKG_CONFIG="${_WRAPPER_BIN}/pkg-config"
+	fi
+	export PATH="${_WRAPPER_BIN}:${PATH}"
 }
 
 termux_step_create_debscripts() {

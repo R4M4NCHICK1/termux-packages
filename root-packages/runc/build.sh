@@ -2,9 +2,10 @@ TERMUX_PKG_HOMEPAGE=https://www.opencontainers.org/
 TERMUX_PKG_DESCRIPTION="A tool for spawning and running containers according to the OCI specification"
 TERMUX_PKG_LICENSE="Apache-2.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=1.0.0-rc92
+TERMUX_PKG_VERSION="1.1.12"
 TERMUX_PKG_SRCURL=https://github.com/opencontainers/runc/archive/v${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=28378df983a3c586ed3ec8c76a774a9b10f36a0c323590a284b801cce95cc61f
+TERMUX_PKG_SHA256=be31b07d6a54a8f234016501c300ad04b6c428c56588e7eca8c3b663308db208
+TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_DEPENDS="libseccomp"
 
 termux_step_make() {

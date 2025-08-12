@@ -2,25 +2,21 @@ TERMUX_PKG_HOMEPAGE=https://github.com/lzanini/mdbook-katex
 TERMUX_PKG_DESCRIPTION="A preprocessor for mdBook, pre-rendering LaTex equations to HTML at build time"
 TERMUX_PKG_LICENSE="MIT"
 TERMUX_PKG_MAINTAINER="@termux"
-_COMMIT=a16a13f4358cf67db5570ecff5e1002578c161d5
-_COMMIT_DATE=2022.01.27
-TERMUX_PKG_VERSION=0.2.10p${_COMMIT_DATE//./}
-TERMUX_PKG_REVISION=2
-TERMUX_PKG_SRCURL=https://github.com/lzanini/mdbook-katex.git
-TERMUX_PKG_GIT_BRANCH=master
+TERMUX_PKG_VERSION="0.9.0"
+TERMUX_PKG_SRCURL=https://github.com/lzanini/mdbook-katex/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz
+TERMUX_PKG_SHA256=098b6554fcf87705e1902584b4c352b04ed6f31c3a995aba9a36bc087e22c409
+TERMUX_PKG_UPDATE_VERSION_REGEXP="\d+\.\d+\.\d+$"
+TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_DEPENDS="openssl"
 TERMUX_PKG_BUILD_IN_SRC=true
 
-termux_step_post_get_source() {
-	git fetch --unshallow
-	git checkout $_COMMIT
-
-	local version="$(git log -1 --format=%cs | sed 's/-/./g')"
-	if [ "$version" != "$_COMMIT_DATE" ]; then
-		echo -n "ERROR: The specified commit date \"$_COMMIT_DATE\""
-		echo " is different from what is expected to be: \"$version\""
-		return 1
+termux_pkg_auto_update() {
+	local latest_tag="$(termux_github_api_get_tag \
+		"${TERMUX_PKG_SRCURL}" latest-regex "${TERMUX_PKG_UPDATE_VERSION_REGEXP}")"
+	if [[ -z "${latest_tag}" ]]; then
+		termux_error_exit "ERROR: Unable to get tag from ${TERMUX_PKG_SRCURL}"
 	fi
+	termux_pkg_upgrade_version "${latest_tag}"
 }
 
 termux_step_pre_configure() {

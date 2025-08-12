@@ -3,10 +3,10 @@ TERMUX_PKG_DESCRIPTION="Network Security Services (NSS)"
 TERMUX_PKG_LICENSE="MPL-2.0"
 TERMUX_PKG_LICENSE_FILE="nss/COPYING"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=3.78
+TERMUX_PKG_VERSION="3.100"
 TERMUX_PKG_SRCURL=https://archive.mozilla.org/pub/security/nss/releases/NSS_${TERMUX_PKG_VERSION//./_}_RTM/src/nss-${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=f455f341e787c1167328e80a84f77b9a557d595066dda6486a1874d72da68800
-TERMUX_PKG_DEPENDS="libnspr, libsqlite, zlib"
+TERMUX_PKG_SHA256=1e35373ce9cb5b776f678bb341b0625c437520d09ebd91d1abd622e072e38d88
+TERMUX_PKG_DEPENDS="libnspr, libsqlite"
 TERMUX_PKG_BUILD_IN_SRC=true
 TERMUX_PKG_EXTRA_MAKE_ARGS="
 CC_IS_CLANG=1
@@ -20,13 +20,14 @@ OS_TEST=$TERMUX_ARCH
 "
 TERMUX_MAKE_PROCESSES=1
 TERMUX_PKG_HOSTBUILD=true
+TERMUX_PKG_NO_STATICSPLIT=true
 
 _LIBNSS_SIGN_LIBS="libfreebl3.so libnssdbm3.so libsoftokn3.so"
 
 termux_step_host_build() {
 	mkdir -p nsinstall
 	cd nsinstall
-	for f in nsinstall.c pathsub.c; do 
+	for f in nsinstall.c pathsub.c; do
 		gcc -c $TERMUX_PKG_SRCDIR/nss/coreconf/nsinstall/$f
 	done
 	gcc nsinstall.o pathsub.o -o nsinstall
@@ -52,6 +53,17 @@ termux_step_make() {
 }
 
 termux_step_make_install() {
+	local nsprver="$(pkg-config --modversion nspr)"
+	local pkgconfig_dir=$TERMUX_PREFIX/lib/pkgconfig
+	mkdir -p $pkgconfig_dir
+	sed \
+		-e "s|%prefix%|${TERMUX_PREFIX}|g" \
+		-e 's|%exec_prefix%|${prefix}|g' \
+		-e 's|%libdir%|${prefix}/lib|g' \
+		-e 's|%includedir%|${prefix}/include/nss|g' \
+		-e "s|%NSS_VERSION%|${TERMUX_PKG_VERSION#*:}|g" \
+		-e "s|%NSPR_VERSION%|${nsprver}|g" \
+		nss/pkg/pkg-config/nss.pc.in > $pkgconfig_dir/nss.pc
 	cd dist
 	install -Dm600 -t $TERMUX_PREFIX/include/nss public/nss/*
 	install -Dm600 -t $TERMUX_PREFIX/include/nss/private private/nss/*
@@ -67,6 +79,15 @@ termux_step_make_install() {
 		fi
 	done
 	popd
+}
+
+termux_step_post_massage() {
+	find lib -name '*.a' \
+		-a ! -name libcrmf.a \
+		-a ! -name libfreebl.a \
+		-a ! -name libnssb.a \
+		-a ! -name libnssckfw.a \
+		-delete
 }
 
 termux_step_create_debscripts() {

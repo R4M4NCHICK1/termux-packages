@@ -1,15 +1,5 @@
-diff -uNr boinc-client_release-7.18-7.18.1/client/Makefile.am boinc-client_release-7.18-7.18.1.mod/client/Makefile.am
---- boinc-client_release-7.18-7.18.1/client/Makefile.am	2021-08-03 23:52:19.000000000 +0800
-+++ boinc-client_release-7.18-7.18.1.mod/client/Makefile.am	2021-12-27 20:14:51.115967152 +0800
-@@ -25,7 +25,7 @@
- endif
- 
- bin_PROGRAMS = boinc_client boinccmd boinc
--if !OS_WIN32
-+if OS_DARWIN
- bin_PROGRAMS += switcher
- endif
- 
+--- a/client/Makefile.am
++++ b/client/Makefile.am
 @@ -139,12 +139,12 @@
  
  boinc$(EXEEXT): boinc_client$(EXEEXT)

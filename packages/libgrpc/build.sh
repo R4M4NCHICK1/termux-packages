@@ -2,19 +2,20 @@ TERMUX_PKG_HOMEPAGE=https://grpc.io/
 TERMUX_PKG_DESCRIPTION="High performance, open source, general RPC framework that puts mobile and HTTP/2 first"
 TERMUX_PKG_LICENSE="Apache-2.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_SRCURL=https://github.com/grpc/grpc.git
-TERMUX_PKG_VERSION=1.44.0
-TERMUX_PKG_REVISION=2
-TERMUX_PKG_DEPENDS="ca-certificates, libc++, libre2, openssl, protobuf, c-ares, zlib"
+TERMUX_PKG_SRCURL=git+https://github.com/grpc/grpc
+TERMUX_PKG_VERSION="1.64.0"
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_UPDATE_TAG_TYPE="latest-release-tag"
+TERMUX_PKG_DEPENDS="abseil-cpp, c-ares, ca-certificates, libc++, libprotobuf, libre2, openssl, protobuf, zlib"
 TERMUX_PKG_BREAKS="libgrpc-dev"
 TERMUX_PKG_REPLACES="libgrpc-dev"
-TERMUX_PKG_BUILD_DEPENDS="gflags, gflags-static, libprotobuf"
+TERMUX_PKG_BUILD_DEPENDS="gflags, gflags-static"
 TERMUX_PKG_HOSTBUILD=true
-TERMUX_PKG_BUILD_IN_SRC=true
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 -DCMAKE_STRIP=$(command -v strip)
 -DGIT_EXECUTABLE=$(command -v git)
 -DBUILD_SHARED_LIBS=ON
+-DgRPC_ABSL_PROVIDER=package
 -DgRPC_CARES_PROVIDER=package
 -DgRPC_PROTOBUF_PROVIDER=package
 -DgRPC_SSL_PROVIDER=package
@@ -27,15 +28,10 @@ TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 -DProtobuf_PROTOC_LIBRARY=$TERMUX_PREFIX/lib/libprotoc.so
 "
 
-termux_step_post_get_source() {
-	termux_setup_protobuf
-}
-
 termux_step_host_build() {
 	termux_setup_cmake
 	termux_setup_ninja
 
-	cd $TERMUX_PKG_SRCDIR
 	export LD=gcc
 	export LDXX=g++
 
@@ -45,16 +41,19 @@ termux_step_host_build() {
 	# when building version 1.17.2:
 	CXXFLAGS="-Wno-error=class-memaccess" \
 		CFLAGS="-Wno-implicit-fallthrough" \
-		cmake -G Ninja -DCMAKE_INSTALL_PREFIX=$TERMUX_PKG_HOSTBUILD_DIR
-	ninja -j $TERMUX_MAKE_PROCESSES install
-	ninja -t clean
-	rm -rf CMakeCache.txt CMakeFiles
+		cmake -G Ninja "$TERMUX_PKG_SRCDIR"
+
+	ninja grpc_cpp_plugin
 }
 
 termux_step_pre_configure() {
-	export PATH=$TERMUX_PKG_HOSTBUILD_DIR/bin:$PATH
-	sed "s|@PATH_TO_PLUGIN@|$TERMUX_PKG_HOSTBUILD_DIR/bin/grpc_cpp_plugin|g" \
-		$TERMUX_PKG_BUILDER_DIR/CMakeLists.txt.diff \
-		| patch -p1
+	termux_setup_protobuf
+	termux_setup_cmake
+	termux_setup_ninja
+
+	export PATH=$TERMUX_PKG_HOSTBUILD_DIR:$PATH
 	export GRPC_CROSS_COMPILE=true
+
+	CPPFLAGS+=" -DPROTOBUF_USE_DLLS"
+	LDFLAGS+=" $($TERMUX_SCRIPTDIR/packages/libprotobuf/interface_link_libraries.sh)"
 }

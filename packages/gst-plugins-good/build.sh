@@ -1,14 +1,12 @@
 TERMUX_PKG_HOMEPAGE=https://gstreamer.freedesktop.org/
 TERMUX_PKG_DESCRIPTION="GStreamer Good Plug-ins"
-TERMUX_PKG_LICENSE="LGPL-2.0"
+TERMUX_PKG_LICENSE="LGPL-2.1"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=1.20.1
-TERMUX_PKG_REVISION=1
+TERMUX_PKG_VERSION="1.24.3"
 TERMUX_PKG_SRCURL=https://gstreamer.freedesktop.org/src/gst-plugins-good/gst-plugins-good-${TERMUX_PKG_VERSION}.tar.xz
-TERMUX_PKG_SHA256=3c66876f821d507bcdbebffb08b4f31a322727d6753f65a0f02c905ecb7084aa
-TERMUX_PKG_DEPENDS="gst-plugins-base, libandroid-shmem, libcaca, libsoup, libjpeg-turbo, libpng, libflac, libbz2, libvpx, pulseaudio, libmp3lame, gstreamer, libogg, zlib"
-# pcre needed by glib. libxml2 needed by libsoup
-TERMUX_PKG_BUILD_DEPENDS="glib, pcre, libxml2"
+TERMUX_PKG_SHA256=150f914e61dc05600b68b88ca103c7cc227130158e389ea9ea159f4050a2ebb0
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_DEPENDS="glib, gst-plugins-base, gstreamer, libandroid-shmem, libbz2, libcaca, libflac, libjpeg-turbo, libmp3lame, libnettle, libpng, libvpx, libx11, libxext, libxfixes, libxml2, pulseaudio, zlib"
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 -Dcairo=disabled
 -Dexamples=disabled
@@ -21,5 +19,15 @@ TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 "
 
 termux_step_pre_configure() {
+	local _WRAPPER_BIN="${TERMUX_PKG_BUILDDIR}/_wrapper/bin"
+	mkdir -p "${_WRAPPER_BIN}"
+	if [[ "${TERMUX_ON_DEVICE_BUILD}" == "false" ]]; then
+		sed "s|^export PKG_CONFIG_LIBDIR=|export PKG_CONFIG_LIBDIR=${TERMUX_PREFIX}/opt/glib/cross/lib/x86_64-linux-gnu/pkgconfig:|" \
+			"${TERMUX_STANDALONE_TOOLCHAIN}/bin/pkg-config" \
+			> "${_WRAPPER_BIN}/pkg-config"
+		chmod +x "${_WRAPPER_BIN}/pkg-config"
+		export PKG_CONFIG="${_WRAPPER_BIN}/pkg-config"
+	fi
+	export PATH="${_WRAPPER_BIN}:${PATH}"
 	LDFLAGS+=" -landroid-shmem"
 }

@@ -1,11 +1,13 @@
 TERMUX_PKG_HOMEPAGE=https://openvpn.net
 TERMUX_PKG_DESCRIPTION="An easy-to-use, robust, and highly configurable VPN (Virtual Private Network)"
+# License: GPL-2.0-with-OpenSSL-exception
 TERMUX_PKG_LICENSE="GPL-2.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=2.4.12
-TERMUX_PKG_SRCURL=https://swupdate.openvpn.net/community/releases/openvpn-${TERMUX_PKG_VERSION}.tar.xz
-TERMUX_PKG_SHA256=7426b99b2058b942552af2680ee58546fbf63712992557328bd0014093aa7da4
-TERMUX_PKG_DEPENDS="liblz4, liblzo, net-tools, openssl-1.1"
+TERMUX_PKG_VERSION="2.6.10"
+TERMUX_PKG_SRCURL=https://github.com/OpenVPN/openvpn/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz
+TERMUX_PKG_SHA256=8d8d9a4624703d1300913d06ee5498d8a92485f140ebf36ac5c40ec5ecdc68f3
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_DEPENDS="libcap-ng, liblz4, liblzo, net-tools, openssl"
 TERMUX_PKG_BUILD_IN_SRC=true
 
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
@@ -23,10 +25,7 @@ NETSTAT=$TERMUX_PREFIX/bin/netstat
 "
 
 termux_step_pre_configure() {
-	CFLAGS="-I$TERMUX_PREFIX/include/openssl-1.1 $CFLAGS"
-	CPPFLAGS="-I$TERMUX_PREFIX/include/openssl-1.1 $CPPFLAGS"
-	CXXFLAGS="-I$TERMUX_PREFIX/include/openssl-1.1 $CXXFLAGS"
-	LDFLAGS="-L$TERMUX_PREFIX/lib/openssl-1.1 -Wl,-rpath=$TERMUX_PREFIX/lib/openssl-1.1 $LDFLAGS"	
+	autoreconf -fi
 }
 
 termux_step_post_make_install() {

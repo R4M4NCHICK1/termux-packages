@@ -2,12 +2,13 @@ TERMUX_PKG_HOMEPAGE=https://github.com/tesseract-ocr/tesseract
 TERMUX_PKG_DESCRIPTION="Tesseract is probably the most accurate open source OCR engine available"
 TERMUX_PKG_LICENSE="Apache-2.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=5.1.0
-TERMUX_PKG_REVISION=3
+TERMUX_PKG_VERSION="5.3.4"
+TERMUX_PKG_REVISION=1
 TERMUX_PKG_SRCURL=https://github.com/tesseract-ocr/tesseract/archive/${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=fdec8528d5a0ecc28ab5fff985e0b8ced60726f6ef33f54126f2868e323d4bd2
+TERMUX_PKG_SHA256=141afc12b34a14bb691a939b4b122db0d51bd38feda7f41696822bacea7710c7
 TERMUX_PKG_AUTO_UPDATE=true
-TERMUX_PKG_DEPENDS="leptonica, libandroid-glob, libandroid-posix-semaphore, libc++, libicu, libtool, libuuid, pango, zstd"
+TERMUX_PKG_DEPENDS="fontconfig, glib, harfbuzz, leptonica, libandroid-glob, libandroid-posix-semaphore, libarchive, libc++, libcairo, libcurl, libicu, pango"
+TERMUX_PKG_BUILD_DEPENDS="libcpufeatures"
 TERMUX_PKG_BREAKS="tesseract-dev"
 TERMUX_PKG_REPLACES="tesseract-dev"
 TERMUX_PKG_FORCE_CMAKE=true
@@ -15,9 +16,20 @@ TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 -DBUILD_SHARED_LIBS=ON
 -DUSE_SYSTEM_ICU=on
 -DTESSDATA_PREFIX=$TERMUX_PREFIX/share
+-DOPENMP_BUILD=ON
+-DLEPT_TIFF_RESULT=0
 "
-# NEON checks in src/arch/simddetect.cpp don't work for i686 currently
-TERMUX_PKG_BLACKLISTED_ARCHES="i686"
+
+termux_step_post_get_source() {
+	# Do not forget to bump revision of reverse dependencies and rebuild them
+	# after SOVERSION is changed.
+	local _SOVERSION=5
+
+	local v=$(sed -n 's/^\([^.]*\)\..*/\1/p' VERSION)
+	if [ "${_SOVERSION}" != "${v}" ]; then
+		termux_error_exit "SOVERSION guard check failed."
+	fi
+}
 
 termux_step_pre_configure() {
 	LDFLAGS+=" -landroid-posix-semaphore"

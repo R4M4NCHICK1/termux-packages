@@ -1,12 +1,13 @@
 TERMUX_PKG_HOMEPAGE=https://www.bacula.org
 TERMUX_PKG_DESCRIPTION="Bacula backup software"
 TERMUX_PKG_LICENSE="AGPL-V3"
-TERMUX_PKG_MAINTAINER="Matlink <matlink@matlink.fr>"
-TERMUX_PKG_VERSION=11.0.5
-TERMUX_PKG_REVISION=3
+TERMUX_PKG_LICENSE_FILE="LICENSE"
+TERMUX_PKG_MAINTAINER="@termux"
+TERMUX_PKG_VERSION="15.0.2"
 TERMUX_PKG_SRCURL=https://sourceforge.net/projects/bacula/files/bacula/${TERMUX_PKG_VERSION}/bacula-${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=ef5b3b67810442201b80dc1d47ccef77b5ed378fe1285406f3a73401b6e8111a
-TERMUX_PKG_DEPENDS="openssl"
+TERMUX_PKG_SHA256=55515c2a66af9a86b955daea4089378b864d051b2e6e30383bef36e693acea7a
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_DEPENDS="libc++, liblzo, openssl, zlib"
 TERMUX_PKG_BUILD_IN_SRC=true
 TERMUX_PKG_CONFFILES=etc/bacula/bacula-fd.conf
 TERMUX_PKG_SERVICE_SCRIPT=("bacula-fd" "${TERMUX_PREFIX}/bin/bacula-fd")
@@ -18,6 +19,7 @@ TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 --with-working-dir=${TERMUX_PREFIX}/var/run/bacula
 --with-pid-dir=${TERMUX_PREFIX}/var/run/bacula
 --with-scriptdir=${TERMUX_PREFIX}/etc/bacula/scripts
+--with-lzo=${TERMUX_PREFIX}
 --with-ssl
 --enable-smartalloc
 --enable-conio

@@ -2,15 +2,16 @@ TERMUX_PKG_HOMEPAGE=https://github.com/neutrinolabs/xrdp
 TERMUX_PKG_DESCRIPTION="An open source remote desktop protocol (RDP) server"
 TERMUX_PKG_LICENSE="Apache-2.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=0.9.16
-TERMUX_PKG_REVISION=8
+TERMUX_PKG_VERSION="0.10.0"
 TERMUX_PKG_SRCURL=https://github.com/neutrinolabs/xrdp/releases/download/v${TERMUX_PKG_VERSION}/xrdp-${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=72a86bf3bb8ca3a41905bfa84f500ad73cd23615753f34db7e36278a33c19916
-TERMUX_PKG_DEPENDS="libandroid-shmem, libcrypt, libice, libsm, libuuid, libx11, libxau, libxcb, libxfixes, libxdmcp, libxrandr, openssl-1.1, procps, tigervnc"
+TERMUX_PKG_SHA256=ddd20d1ba903483197a5beae3e46ae0dc1a16b196384935aefa99c2b08b253d9
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_DEPENDS="libandroid-shmem, libx11, libxfixes, libxrandr, openssl, procps, tigervnc"
 TERMUX_PKG_BUILD_IN_SRC=true
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 --disable-pam
 --enable-static
+--enable-strict-locations
 --with-socketdir=$TERMUX_PREFIX/tmp/.xrdp
 "
 
@@ -57,12 +58,7 @@ etc/xrdp/key.pem
 
 termux_step_pre_configure() {
 	LDFLAGS+=" -Wl,-rpath=${TERMUX_PREFIX}/lib/xrdp -Wl,--enable-new-dtags"
-	export LIBS="-landroid-shmem -llog"
-
-	CFLAGS="-I$TERMUX_PREFIX/include/openssl-1.1 $CFLAGS"
-	CPPFLAGS="-I$TERMUX_PREFIX/include/openssl-1.1 $CPPFLAGS"
-	CXXFLAGS="-I$TERMUX_PREFIX/include/openssl-1.1 $CXXFLAGS"
-	LDFLAGS="-L$TERMUX_PREFIX/lib/openssl-1.1 -Wl,-rpath=$TERMUX_PREFIX/lib/openssl-1.1 $LDFLAGS"
+	export LIBS="-landroid-shmem"
 }
 
 termux_step_create_debscripts() {

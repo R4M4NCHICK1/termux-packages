@@ -3,12 +3,17 @@ TERMUX_PKG_DESCRIPTION="Implements a programming model in C++ for writing perfor
 TERMUX_PKG_LICENSE="BSD 3-Clause"
 TERMUX_PKG_LICENSE_FILE="Copyright.txt"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=3.5.00
+TERMUX_PKG_VERSION="4.3.01"
 TERMUX_PKG_SRCURL=https://github.com/kokkos/kokkos/archive/refs/tags/${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=748f06aed63b1e77e3653cd2f896ef0d2c64cb2e2d896d9e5a57fec3ff0244ff
-TERMUX_PKG_DEPENDS="libc++"
+TERMUX_PKG_SHA256=5998b7c732664d6b5e219ccc445cd3077f0e3968b4be480c29cd194b4f45ec70
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_DEPENDS="libandroid-execinfo, libc++"
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 -DBUILD_SHARED_LIBS=ON
 -DKokkos_ENABLE_LIBDL=OFF
 "
 TERMUX_PKG_BLACKLISTED_ARCHES="arm, i686"
+
+termux_step_pre_configure() {
+	LDFLAGS+=" -landroid-execinfo"
+}

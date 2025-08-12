@@ -9,13 +9,15 @@ TERMUX_PKG_MAINTAINER="@termux"
 # - libregexp-assemble-perl
 # - psutils
 # - subversion
-TERMUX_PKG_VERSION=(5.34.1
-                    1.3.7)
-TERMUX_PKG_REVISION=1
-TERMUX_PKG_SHA256=(357951a491b0ba1ce3611263922feec78ccd581dddc24a446b033e25acf242a1
-                   77f13ca84a63025053852331b72d4046c1f90ded98bd45ccedea738621907335)
+TERMUX_PKG_VERSION=(5.38.2
+                    388d0eedbfc3864bbbf7ad7f965064d99cac5aaa)
+TERMUX_PKG_REVISION=3
+TERMUX_PKG_SHA256=(a0a31534451eb7b83c7d6594a497543a54d488bc90ca00f5e34762577f40655e
+                   a975c196075623f0dc94f57d00633b0d18ed08e3d85a3ea19d34ece4ec1a94c1)
 TERMUX_PKG_SRCURL=(http://www.cpan.org/src/5.0/perl-${TERMUX_PKG_VERSION}.tar.gz
-		   https://github.com/arsv/perl-cross/releases/download/${TERMUX_PKG_VERSION[1]}/perl-cross-${TERMUX_PKG_VERSION[1]}.tar.gz)
+                   https://github.com/arsv/perl-cross/archive/${TERMUX_PKG_VERSION[1]}.tar.gz)
+#                  https://github.com/arsv/perl-cross/releases/download/${TERMUX_PKG_VERSION[1]}/perl-cross-${TERMUX_PKG_VERSION[1]}.tar.gz)
+TERMUX_PKG_DEPENDS=libandroid-utimes
 TERMUX_PKG_BUILD_IN_SRC=true
 TERMUX_MAKE_PROCESSES=1
 TERMUX_PKG_RM_AFTER_INSTALL="bin/perl${TERMUX_PKG_VERSION}"
@@ -39,18 +41,11 @@ termux_step_post_get_source() {
 termux_step_configure() {
 	export PATH=$PATH:$TERMUX_STANDALONE_TOOLCHAIN/bin
 
-	# Since we specify $TERMUX_PREFIX/bin/sh below for the shell
-	# it will be run during the build, so temporarily (removed in
-	# termux_step_post_make_install below) setup symlink:
-	rm -f $TERMUX_PREFIX/bin/sh
-	ln -s /bin/sh $TERMUX_PREFIX/bin/sh
-
 	(
 		ORIG_AR=$AR; unset AR
 		ORIG_AS=$AS; unset AS
 		ORIG_CC=$CC; unset CC
 		ORIG_CXX=$CXX; unset CXX
-		ORIG_CPP=$CPP; unset CPP
 		ORIG_CFLAGS=$CFLAGS; unset CFLAGS
 		ORIG_CPPFLAGS=$CPPFLAGS; unset CPPFLAGS
 		ORIG_CXXFLAGS=$CXXFLAGS; unset CXXFLAGS
@@ -59,7 +54,7 @@ termux_step_configure() {
 		ORIG_LD=$LD; unset LD
 
 		cd $TERMUX_PKG_BUILDDIR
-		$TERMUX_PKG_SRCDIR/configure \
+		CFLAGS=" -D__USE_BSD=1" LDFLAGS=" -Wl,-rpath=$TERMUX_PREFIX/lib -L$TERMUX_PREFIX/lib -landroid-utimes -lm" $TERMUX_PKG_SRCDIR/configure \
 			--target=$TERMUX_HOST_PLATFORM \
 			--with-cc="$ORIG_CC" \
 			--with-ranlib="$ORIG_RANLIB" \
@@ -71,7 +66,9 @@ termux_step_configure() {
 			-Dar="$ORIG_AR" \
 			-Duseshrplib \
 			-Duseithreads \
-			-Dusemultiplicity
+			-Dusemultiplicity \
+			-Doptimize="-O2" \
+			--with-libs="-lm -L$TERMUX_PREFIX/lib -landroid-utimes"
 	)
 }
 
@@ -80,9 +77,9 @@ termux_step_post_make_install() {
 	cd $TERMUX_PREFIX/share/man/man1
 	rm perlbug.1
 	ln -s perlthanks.1 perlbug.1
-
-	# Cleanup:
-	rm $TERMUX_PREFIX/bin/sh
+	cd $TERMUX_PREFIX/bin
+	rm perlbug
+	ln -s perlthanks perlbug
 
 	cd $TERMUX_PREFIX/lib
 	ln -f -s perl5/${TERMUX_PKG_VERSION}/${TERMUX_ARCH}-android/CORE/libperl.so libperl.so

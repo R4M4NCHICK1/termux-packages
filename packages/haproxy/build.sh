@@ -2,30 +2,34 @@ TERMUX_PKG_HOMEPAGE=https://www.haproxy.org/
 TERMUX_PKG_DESCRIPTION="The Reliable, High Performance TCP/HTTP Load Balancer"
 TERMUX_PKG_LICENSE="GPL-2.0, LGPL-2.1"
 TERMUX_PKG_MAINTAINER="@termux"
-_MAJOR_VERSION=2.4
-TERMUX_PKG_VERSION=${_MAJOR_VERSION}.14
-TERMUX_PKG_SRCURL=http://www.haproxy.org/download/${_MAJOR_VERSION}/src/haproxy-${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=e6346b406b911b94c88eb05a5f622d53d49ffc247468fb03c12a4ffe3cc5ff04
-TERMUX_PKG_DEPENDS="liblua53, openssl, pcre, zlib"
+TERMUX_PKG_VERSION="2.9.7"
+TERMUX_PKG_SRCURL=https://www.haproxy.org/download/${TERMUX_PKG_VERSION%.*}/src/haproxy-${TERMUX_PKG_VERSION}.tar.gz
+TERMUX_PKG_SHA256=d1a0a56f008a8d2f007bc0c37df6b2952520d1f4dde33b8d3802710e5158c131
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_DEPENDS="liblua53, openssl, pcre2, zlib"
 TERMUX_PKG_BUILD_IN_SRC=true
 
 TERMUX_PKG_CONFFILES="etc/haproxy/haproxy.cfg"
+
+termux_step_pre_configure() {
+	CFLAGS+=" -fwrapv"
+}
 
 termux_step_make() {
 	CC="$CC -Wl,-rpath=$TERMUX_PREFIX/lib -Wl,--enable-new-dtags"
 
 	make \
+		V=1 \
 		CPU=generic \
 		TARGET=generic \
 		USE_GETADDRINFO=1 \
 		USE_LUA=1 \
 		LUA_INC="$TERMUX_PREFIX/include/lua5.3" \
-		LUA_LIB="$TERMUX_PREFIX/lib"
+		LUA_LIB="$TERMUX_PREFIX/lib" \
 		LUA_LIB_NAME=lua5.3 \
 		USE_OPENSSL=1 \
-		USE_PCRE=1 \
-		PCRE_INC="$TERMUX_PREFIX/include" \
-		PCRE_LIB="$TERMUX_PREFIX/lib" \
+		USE_PCRE2=1 \
+		PCRE2_CONFIG="$TERMUX_PREFIX/bin/pcre2-config" \
 		USE_ZLIB=1 \
 		ADDINC="$CPPFLAGS" \
 		CFLAGS="$CFLAGS" \

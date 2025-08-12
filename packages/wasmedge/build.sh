@@ -3,44 +3,34 @@ TERMUX_PKG_DESCRIPTION="A lightweight, high-performance, and extensible WebAssem
 TERMUX_PKG_LICENSE="Apache-2.0"
 TERMUX_PKG_LICENSE_FILE="LICENSE, LICENSE.spdx"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=0.9.1
+TERMUX_PKG_VERSION="0.14.0"
 TERMUX_PKG_SRCURL=https://github.com/WasmEdge/WasmEdge/archive/refs/tags/${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=b4a48bf5a009d6c4bf99479f87bf3bf8ebd6386d636fdeb721540456330dce59
-TERMUX_PKG_DEPENDS="libc++, libllvm"
-TERMUX_PKG_BUILD_DEPENDS="boost-headers, boost-static, libllvm-static, libpolly, lld, llvm"
+TERMUX_PKG_SHA256=27ef0ffa399fbaf44fb43733ea4ae4a4c1d9836a175269924ffd7e3d258d3567
+TERMUX_PKG_DEPENDS="libc++"
+TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 -DWASMEDGE_FORCE_DISABLE_LTO=ON
+-DWASMEDGE_USE_LLVM=OFF
 "
 
-# Build failure for i686:
-# ```
+termux_step_pre_configure() {
+	case "${TERMUX_ARCH}" in
+	i686)
+		CFLAGS+=" -malign-double"
+		CXXFLAGS+=" -malign-double"
+		;;
+	esac
+}
+
+# wasmedge does not support LLVM 17 yet
+# drop all AOT features which depends on libllvm
+
+# WASMEDGE_BUILD_AOT_RUNTIME is not supported on i686
+# https://github.com/WasmEdge/WasmEdge/blob/f6d99c87fef0db160d17ccf3f7f3cd87cbd56e68/lib/aot/compiler.cpp#L5032
+
 # [...]/wasmedge/src/thirdparty/wasi/api.hpp:55:1: error: static_assert failed
 # due to requirement 'alignof(long long) == 8' "non-wasi data layout"
 # static_assert(alignof(int64_t) == 8, "non-wasi data layout");
 # ^             ~~~~~~~~~~~~~~~~~~~~~
-# ```
-TERMUX_PKG_BLACKLISTED_ARCHES="i686"
-
-termux_step_pre_configure() {
-	_NEED_DUMMY_LIBPTHREAD_A=
-	_LIBPTHREAD_A=$TERMUX_PREFIX/lib/libpthread.a
-	if [ ! -e $_LIBPTHREAD_A ]; then
-		_NEED_DUMMY_LIBPTHREAD_A=true
-		echo '!<arch>' > $_LIBPTHREAD_A
-	fi
-	_NEED_DUMMY_LIBRT_A=
-	_LIBRT_A=$TERMUX_PREFIX/lib/librt.a
-	if [ ! -e $_LIBRT_A ]; then
-		_NEED_DUMMY_LIBRT_A=true
-		echo '!<arch>' > $_LIBRT_A
-	fi
-}
-
-termux_step_post_make_install() {
-	if [ $_NEED_DUMMY_LIBPTHREAD_A ]; then
-		rm -f $_LIBPTHREAD_A
-	fi
-	if [ $_NEED_DUMMY_LIBRT_A ]; then
-		rm -f $_LIBRT_A
-	fi
-}
+#
+# Applying -malign-double will unblock i686 build at the expense of breaking something

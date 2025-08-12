@@ -2,14 +2,28 @@ TERMUX_PKG_HOMEPAGE=https://www.webmproject.org
 TERMUX_PKG_DESCRIPTION="VP8 & VP9 Codec SDK"
 TERMUX_PKG_LICENSE="BSD 3-Clause"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=1.11.0
-TERMUX_PKG_SRCURL=https://github.com/webmproject/libvpx/archive/v${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=965e51c91ad9851e2337aebcc0f517440c637c506f3a03948062e3d5ea129a83
+TERMUX_PKG_VERSION="1:1.14.0"
+TERMUX_PKG_REVISION=1
+TERMUX_PKG_SRCURL=https://github.com/webmproject/libvpx/archive/v${TERMUX_PKG_VERSION:2}.tar.gz
+TERMUX_PKG_SHA256=5f21d2db27071c8a46f1725928a10227ae45c5cd1cad3727e4aafbe476e321fa
 TERMUX_PKG_DEPENDS="libc++"
 TERMUX_PKG_BREAKS="libvpx-dev"
 TERMUX_PKG_REPLACES="libvpx-dev"
 TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_UPDATE_TAG_TYPE="newest-tag"
+TERMUX_PKG_UPDATE_VERSION_REGEXP="\d+\.\d+\.\d+"
+
+termux_pkg_auto_update() {
+	# Get the newest tag:
+	local tag
+	tag="$(termux_github_api_get_tag "${TERMUX_PKG_SRCURL}" "${TERMUX_PKG_UPDATE_TAG_TYPE}")"
+	# check if this is not a release (e.g. a release candidate):
+	if grep -qP "^${TERMUX_PKG_UPDATE_VERSION_REGEXP}\$" <<<"$tag"; then
+		termux_pkg_upgrade_version "$tag"
+	else
+		echo "WARNING: Skipping auto-update: Not a release($tag)"
+	fi
+}
 
 termux_step_configure() {
 	# Certain packages are not safe to build on device because their
@@ -21,18 +35,13 @@ termux_step_configure() {
 	# Force fresh install of header files:
 	rm -Rf $TERMUX_PREFIX/include/vpx
 
-	export LD=$CC
-
 	if [ $TERMUX_ARCH = "arm" ]; then
-		export AS=$TERMUX_HOST_PLATFORM-as
-		_CONFIGURE_TARGET="--target=armv7-android-gcc"
+		_CONFIGURE_TARGET="--target=armv7-android-gcc --disable-neon-asm"
 	elif [ $TERMUX_ARCH = "i686" ]; then
-		export AS=yasm
 		_CONFIGURE_TARGET="--target=x86-android-gcc"
 	elif [ $TERMUX_ARCH = "aarch64" ]; then
 		_CONFIGURE_TARGET="--force-target=arm64-v8a-android-gcc"
 	elif [ $TERMUX_ARCH = "x86_64" ]; then
-		export AS=yasm
 		_CONFIGURE_TARGET="--target=x86_64-android-gcc"
 	else
 		termux_error_exit "Unsupported arch: $TERMUX_ARCH"
@@ -51,16 +60,22 @@ termux_step_configure() {
 		--disable-realtime-only \
 		--disable-unit-tests \
 		--enable-pic \
+		--enable-postproc \
 		--enable-vp8 \
+		--enable-vp9 \
+		--enable-vp9-highbitdepth \
+		--enable-vp9-temporal-denoising \
+		--enable-vp9-postproc \
 		--enable-shared \
 		--enable-small \
+		--as=auto \
 		--extra-cflags="-fPIC"
 }
 
 termux_step_post_massage() {
 	# Do not forget to bump revision of reverse dependencies and rebuild them
 	# after SOVERSION is changed.
-	local _SOVERSION_GUARD_FILES="lib/libvpx.so.7"
+	local _SOVERSION_GUARD_FILES="lib/libvpx.so.9"
 	local f
 	for f in ${_SOVERSION_GUARD_FILES}; do
 		if [ ! -e "${f}" ]; then

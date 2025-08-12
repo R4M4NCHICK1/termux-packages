@@ -2,13 +2,18 @@ TERMUX_PKG_HOMEPAGE=https://github.com/MaskRay/ccls
 TERMUX_PKG_DESCRIPTION="C/C++/ObjC language server"
 TERMUX_PKG_LICENSE="Apache-2.0"
 TERMUX_PKG_MAINTAINER="@termux"
-_COMMIT=790daca4b2d9d5873623fee86283cd61212df674
-_COMMIT_DATE=2022.01.30
+_COMMIT=f8d2778b659a12a94b60258f949373ad42f964a1
+_COMMIT_DATE=2024.02.02
 TERMUX_PKG_VERSION=0.${_COMMIT_DATE//./}
-TERMUX_PKG_SRCURL=https://github.com/MaskRay/ccls.git
+TERMUX_PKG_SRCURL=git+https://github.com/MaskRay/ccls.git
 TERMUX_PKG_GIT_BRANCH=master
-TERMUX_PKG_DEPENDS="libllvm"
+TERMUX_PKG_AUTO_UPDATE=false
+# clang is for libclang-cpp.so
+TERMUX_PKG_DEPENDS="clang, libc++, libllvm"
 TERMUX_PKG_BUILD_DEPENDS="rapidjson, libllvm-static"
+TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
+-DUSE_SYSTEM_RAPIDJSON=ON
+"
 
 termux_step_pre_configure() {
 	git fetch --unshallow

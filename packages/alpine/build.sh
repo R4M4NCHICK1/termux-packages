@@ -2,10 +2,9 @@ TERMUX_PKG_HOMEPAGE=http://alpine.x10host.com/
 TERMUX_PKG_DESCRIPTION="Fast, easy to use email client"
 TERMUX_PKG_LICENSE="Apache-2.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=2.25
-TERMUX_PKG_REVISION=3
-TERMUX_PKG_SRCURL=http://alpine.x10host.com/alpine/release/src/alpine-$TERMUX_PKG_VERSION.tar.xz
-TERMUX_PKG_SHA256=658a150982f6740bb4128e6dd81188eaa1212ca0bf689b83c2093bb518ecf776
+TERMUX_PKG_VERSION=2.26
+TERMUX_PKG_SRCURL=https://fossies.org/linux/misc/alpine-${TERMUX_PKG_VERSION}.tar.xz
+TERMUX_PKG_SHA256=c0779c2be6c47d30554854a3e14ef5e36539502b331068851329275898a9baba
 TERMUX_PKG_DEPENDS="coreutils, libcrypt, ncurses, openssl, openssl-tool"
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 --disable-debug
@@ -47,8 +46,8 @@ termux_step_post_configure() {
 	$CC_FOR_BUILD help_h_gen.c -o help_h_gen
 	touch -d "next hour" help_c_gen help_h_gen
 }
-termux_step_create_debscripts() {
 
+termux_step_create_debscripts() {
 	echo "#!$TERMUX_PREFIX/bin/sh" >> postinst
 	echo "if [ ! -e $TERMUX_ANDROID_HOME/.alpine-smime/.pwd/MasterPassword.crt ] && [ ! -e $HOME/.alpine-smime/.pwd/MasterPassword.key ]; then" >> postinst
 	echo "echo 'warning making a passwordless masterpasword file'" >> postinst
@@ -57,4 +56,3 @@ termux_step_create_debscripts() {
 	echo "touch \$HOME/.pine-passfile" >> postinst
 	echo "fi" >> postinst
 }
-

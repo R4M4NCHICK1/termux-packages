@@ -94,7 +94,16 @@ diff -uNr xrdp-0.9.16/sesman/startwm.sh xrdp-0.9.16.mod/sesman/startwm.sh
 diff -uNr xrdp-0.9.16/xrdp/xrdp.ini xrdp-0.9.16.mod/xrdp/xrdp.ini
 --- xrdp-0.9.16/xrdp/xrdp.ini	2021-04-30 12:26:36.000000000 +0000
 +++ xrdp-0.9.16.mod/xrdp/xrdp.ini	2021-05-05 22:54:03.485386615 +0000
-@@ -153,7 +153,7 @@
+@@ -12,7 +12,7 @@ fork=true
+ ;
+ ; Examples:
+ ;   port=3389
+-;   port=unix://./tmp/xrdp.socket
++;   port=unix://@TERMUX_PREFIX@/tmp/xrdp.socket
+ ;   port=tcp://.:3389                           127.0.0.1:3389
+ ;   port=tcp://:3389                            *:3389
+ ;   port=tcp://<any ipv4 format addr>:3389      192.168.1.1:3389
+@@ -197,7 +197,7 @@ ls_btn_cancel_height=30
  ; Note: Log levels can be any of: core, error, warning, info, debug, or trace
  LogFile=xrdp.log
  LogLevel=INFO
@@ -103,8 +112,8 @@ diff -uNr xrdp-0.9.16/xrdp/xrdp.ini xrdp-0.9.16.mod/xrdp/xrdp.ini
  #SyslogLevel=INFO
  #EnableConsole=false
  #ConsoleLevel=INFO
-@@ -180,29 +180,17 @@
- tcutils=true
+@@ -224,28 +224,17 @@ rail=true
+ xrdpvr=true
  
  ; for debugging xrdp, in section xrdp1, change port=-1 to this:
 -#port=/tmp/.xrdp/xrdp_display_10
@@ -115,7 +124,7 @@ diff -uNr xrdp-0.9.16/xrdp/xrdp.ini xrdp-0.9.16.mod/xrdp/xrdp.ini
  ; Session types
  ;
  
--; Some session types such as Xorg, X11rdp and Xvnc start a display server.
+-; Some session types such as Xorg and Xvnc start a display server.
 -; Startup command-line parameters for the display server are configured
 -; in sesman.ini. See and configure also sesman.ini.
 -[Xorg]
@@ -123,7 +132,6 @@ diff -uNr xrdp-0.9.16/xrdp/xrdp.ini xrdp-0.9.16.mod/xrdp/xrdp.ini
 -lib=libxup.so
 -username=ask
 -password=ask
--ip=127.0.0.1
 -port=-1
 -code=20
 -
@@ -135,11 +143,14 @@ diff -uNr xrdp-0.9.16/xrdp/xrdp.ini xrdp-0.9.16.mod/xrdp/xrdp.ini
  password=ask
  ip=127.0.0.1
  port=-1
-@@ -215,34 +203,3 @@
+@@ -258,73 +247,3 @@ port=-1
  ; (e.g. as part of an x11vnc console session). Replace '0' with the
  ; display number of the session
  #chansrvport=DISPLAY(0)
 -
+-; Generic VNC Proxy
+-; Tailor this to specific hosts and VNC instances by specifying an ip
+-; and port and setting a suitable name.
 -[vnc-any]
 -name=vnc-any
 -lib=libvnc.so
@@ -149,19 +160,55 @@ diff -uNr xrdp-0.9.16/xrdp/xrdp.ini xrdp-0.9.16.mod/xrdp/xrdp.ini
 -password=ask
 -#pamusername=asksame
 -#pampassword=asksame
--#pamsessionmng=127.0.0.1
 -#delay_ms=2000
 -
+-; Generic RDP proxy using NeutrinoRDP
+-; Tailor this to specific hosts by specifying an ip and port and setting
+-; a suitable name.
 -[neutrinordp-any]
 -name=neutrinordp-any
+-; To use this section, you should build xrdp with configure option
+-; --enable-neutrinordp.
 -lib=libxrdpneutrinordp.so
 -ip=ask
 -port=ask3389
 -username=ask
 -password=ask
+-; Uncomment the following lines to enable PAM authentication for proxy
+-; connections.
+-#pamusername=ask
+-#pampassword=ask
 -; Currently NeutrinoRDP doesn't support dynamic resizing. Uncomment
 -; this line if you're using a client which does.
 -#enable_dynamic_resizing=false
+-; By default, performance settings requested by the RDP client are ignored
+-; and chosen by NeutrinoRDP. Uncomment this line to allow the user to
+-; select performance settings in the RDP client.
+-#perf.allow_client_experiencesettings=true
+-; Override any experience setting by uncommenting one or more of the
+-; following lines.
+-#perf.wallpaper=false
+-#perf.font_smoothing=false
+-#perf.desktop_composition=false
+-#perf.full_window_drag=false
+-#perf.menu_anims=false
+-#perf.themes=false
+-#perf.cursor_blink=false
+-; By default NeutrinoRDP supports cursor shadows. If this is giving
+-; you problems (e.g. cursor is a black rectangle) try disabling cursor
+-; shadows by uncommenting the following line.
+-#perf.cursor_shadow=false
+-; By default, NeutrinoRDP uses the keyboard layout of the remote RDP Server.
+-; If you want to tell the remote the keyboard layout of the RDP Client,
+-; by uncommenting the following line.
+-#neutrinordp.allow_client_keyboardLayout=true
+-; The following options will override the remote keyboard layout settings.
+-; These options are for DEBUG and are not recommended for regular use.
+-#neutrinordp.override_keyboardLayout_mask=0x0000FFFF
+-#neutrinordp.override_kbd_type=0x04
+-#neutrinordp.override_kbd_subtype=0x01
+-#neutrinordp.override_kbd_fn_keys=12
+-#neutrinordp.override_kbd_layout=0x00000409
 -
 -; You can override the common channel settings for each session type
 -#channel.rdpdr=true

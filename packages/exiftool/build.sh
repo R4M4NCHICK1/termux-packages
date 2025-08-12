@@ -2,11 +2,13 @@ TERMUX_PKG_HOMEPAGE=https://exiftool.org/
 TERMUX_PKG_DESCRIPTION="Utility for reading, writing and editing meta information in a wide variety of files."
 TERMUX_PKG_LICENSE="Artistic-License-2.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=12.40
-TERMUX_PKG_REVISION=2
-TERMUX_PKG_SRCURL="http://www.sno.phy.queensu.ca/~phil/exiftool/Image-ExifTool-$TERMUX_PKG_VERSION.tar.gz"
-TERMUX_PKG_SHA256=7ae3f6e1183926aff8a0440eb8071bb5b2a335fc1522597f109780ab16617f5f
+TERMUX_PKG_VERSION="12.85"
+TERMUX_PKG_SRCURL="https://exiftool.org/Image-ExifTool-$TERMUX_PKG_VERSION.tar.gz"
+TERMUX_PKG_SHA256=063cf40beb7067d2aa31d8832f46e7a537d0c0aacadf83c6ac61dd317b55b0e6
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_UPDATE_VERSION_REGEXP='^\d+\.\d+(\.(?!0$)\d+)?'
 TERMUX_PKG_DEPENDS="perl"
+TERMUX_PKG_PLATFORM_INDEPENDENT=true
 
 termux_step_make_install() {
 	local current_perl_version=$(. $TERMUX_SCRIPTDIR/packages/perl/build.sh; echo $TERMUX_PKG_VERSION)

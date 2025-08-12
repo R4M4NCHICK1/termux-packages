@@ -7,97 +7,59 @@ LICENSE/LICENSE_AMSFONTS
 LICENSE/LICENSE_BAKOMA
 LICENSE/LICENSE_CARLOGO
 LICENSE/LICENSE_COLORBREWER
+LICENSE/LICENSE_COURIERTEN
 LICENSE/LICENSE_JSXTOOLS_RESIZE_OBSERVER
-LICENSE/LICENSE_QHULL
 LICENSE/LICENSE_QT4_EDITOR
 LICENSE/LICENSE_SOLARIZED
 LICENSE/LICENSE_STIX
 LICENSE/LICENSE_YORICK"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=(3.5.1)
-TERMUX_PKG_VERSION+=(1.22.3) # NumPy version
-TERMUX_PKG_VERSION+=(9.0.1)  # Pillow version
-TERMUX_PKG_SRCURL=(https://github.com/matplotlib/matplotlib/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz
-                   https://github.com/numpy/numpy/archive/refs/tags/v${TERMUX_PKG_VERSION[1]}.tar.gz
-                   https://github.com/python-pillow/Pillow/archive/refs/tags/${TERMUX_PKG_VERSION[2]}.tar.gz)
-TERMUX_PKG_SHA256=(9683da9a0c84d1c42d1bf92ecf6e012d302406a38fd987e3dfbcb7b58b2eea2d
-                   c8f3ec591e3f17b939220f2b9eabb4c5e2db330f8af62c0a3aeee8a4d1a6c0db
-                   01305f0befb644ce7fe90aa0c87573b9163a21d0e65149e8166c24974d9d37d2)
-TERMUX_PKG_DEPENDS="freetype, libc++, libjpeg-turbo, libtiff, libwebp, libxcb, littlecms, openjpeg, python, zlib"
-_PKG_PYTHON_DEPENDS="'cycler>=0.10' 'fonttools>=4.22.0' 'kiwisolver<1.4.0,>=1.0.1' 'numpy>=1.17' 'packaging>=20.0' 'pillow>=6.2.0' 'pyparsing>=2.2.1' 'python-dateutil>=2.7'"
-TERMUX_PKG_BUILD_IN_SRC=true
+TERMUX_PKG_VERSION="3.9.0"
+TERMUX_PKG_SRCURL=https://github.com/matplotlib/matplotlib/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz
+TERMUX_PKG_SHA256=89877b314fe950b7abc118c1e518b0cc82fa9bb6e1228d26560e82be96ac009a
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_DEPENDS="freetype, libc++, patchelf, ninja, python, python-contourpy, python-numpy, python-pillow, python-pip"
+_NUMPY_VERSION=$(. $TERMUX_SCRIPTDIR/packages/python-numpy/build.sh; echo $TERMUX_PKG_VERSION)
+TERMUX_PKG_PYTHON_COMMON_DEPS="build, 'meson-python>=0.13.1', wheel, 'numpy==$_NUMPY_VERSION', 'pybind11>=2.6.0', 'setuptools>=64', 'setuptools_scm>=7'"
 
-_PYTHON_VERSION=$(. $TERMUX_SCRIPTDIR/packages/python/build.sh; echo $_MAJOR_VERSION)
-
-TERMUX_PKG_RM_AFTER_INSTALL="
-bin/
-lib/python${_PYTHON_VERSION}/site-packages/__pycache__
-lib/python${_PYTHON_VERSION}/site-packages/easy-install.pth
-lib/python${_PYTHON_VERSION}/site-packages/site.py
+TERMUX_MESON_WHEEL_CROSSFILE="$TERMUX_PKG_TMPDIR/wheel-cross-file.txt"
+TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
+--cross-file $TERMUX_MESON_WHEEL_CROSSFILE
+-Dsystem-freetype=true
 "
 
-termux_step_post_get_source() {
-	mv numpy-${TERMUX_PKG_VERSION[1]} numpy
-	mv Pillow-${TERMUX_PKG_VERSION[2]} Pillow
+termux_step_pre_configure() {
+	if $TERMUX_ON_DEVICE_BUILD; then
+		termux_error_exit "Package '$TERMUX_PKG_NAME' is not available for on-device builds."
+	fi
 }
 
-termux_step_pre_configure() {
-	termux_setup_python_crossenv
-	pushd $TERMUX_PYTHON_CROSSENV_SRCDIR
-	_CROSSENV_PREFIX=$TERMUX_PKG_BUILDDIR/python-crossenv-prefix
-	python${_PYTHON_VERSION} -m crossenv \
-		$TERMUX_PREFIX/bin/python${_PYTHON_VERSION} \
-		${_CROSSENV_PREFIX}
+termux_step_configure() {
+	termux_setup_meson
+
+	cp -f $TERMUX_MESON_CROSSFILE $TERMUX_MESON_WHEEL_CROSSFILE
+	sed -i 's|^\(\[binaries\]\)$|\1\npython = '\'$(command -v python)\''|g' \
+		$TERMUX_MESON_WHEEL_CROSSFILE
+
+	termux_step_configure_meson
+}
+
+termux_step_make() {
+	pushd $TERMUX_PKG_SRCDIR
+	python -m build -w -n -x --config-setting builddir=$TERMUX_PKG_BUILDDIR .
 	popd
-	. ${_CROSSENV_PREFIX}/bin/activate
-
-	pushd ${_CROSSENV_PREFIX}/build/lib/python${_PYTHON_VERSION}/site-packages
-	patch --silent -p1 < $TERMUX_PKG_BUILDER_DIR/setuptools-44.1.1-no-bdist_wininst.diff || :
-	popd
-
-	build-pip install numpy
-
-	LDFLAGS+=" -lpython${_PYTHON_VERSION}"
-
-	export NPY_DISABLE_SVML=1
-	pushd $TERMUX_PKG_SRCDIR/numpy
-	pip install .
-	popd
-
-	pushd $TERMUX_PKG_SRCDIR/Pillow
-	INCLUDE=$TERMUX_PREFIX/include LIB=$TERMUX_PREFIX/lib \
-		python setup.py install --force
-	popd
-
-	python setup.py install --force
 }
 
 termux_step_make_install() {
-	export PYTHONPATH=$TERMUX_PREFIX/lib/python${_PYTHON_VERSION}/site-packages
-	python setup.py install --force --prefix $TERMUX_PREFIX
-
-	pushd $PYTHONPATH
-	_MATPLOTLIB_EGGDIR=
-	for f in matplotlib-${TERMUX_PKG_VERSION}-py${_PYTHON_VERSION}-linux-*.egg; do
-		if [ -d "$f" ]; then
-			_MATPLOTLIB_EGGDIR="$f"
-			break
-		fi
-	done
-	test -n "${_MATPLOTLIB_EGGDIR}"
-	popd
+	local _pyv="${TERMUX_PYTHON_VERSION/./}"
+	local _whl="matplotlib-$TERMUX_PKG_VERSION-cp$_pyv-cp$_pyv-linux_$TERMUX_ARCH.whl"
+	pip install --no-deps --prefix=$TERMUX_PREFIX --force-reinstall $TERMUX_PKG_SRCDIR/dist/$_whl
 }
 
 termux_step_create_debscripts() {
 	cat <<- EOF > ./postinst
 	#!$TERMUX_PREFIX/bin/sh
 	echo "Installing dependencies through pip. This may take a while..."
-	pip3 install ${_PKG_PYTHON_DEPENDS}
-	echo "./${_MATPLOTLIB_EGGDIR}" >> $TERMUX_PREFIX/lib/python${_PYTHON_VERSION}/site-packages/easy-install.pth
-	EOF
-
-	cat <<- EOF > ./prerm
-	#!$TERMUX_PREFIX/bin/sh
-	sed -i "/\.\/${_MATPLOTLIB_EGGDIR//./\\.}/d" $TERMUX_PREFIX/lib/python${_PYTHON_VERSION}/site-packages/easy-install.pth
+	MATHLIB="m" pip3 install matplotlib
 	EOF
 }

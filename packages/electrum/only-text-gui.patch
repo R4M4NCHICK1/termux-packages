@@ -1,22 +1,22 @@
-diff -u -r ../Electrum-4.0.2/electrum/daemon.py ./electrum/daemon.py
---- ../Electrum-4.0.2/electrum/daemon.py	2019-07-11 15:08:35.000000000 +0200
-+++ ./electrum/daemon.py	2020-05-03 13:46:52.373992401 +0200
-@@ -342,7 +342,7 @@
- 
-     def init_gui(self, config, plugins):
-         threading.current_thread().setName('GUI')
--        gui_name = config.get('gui', 'qt')
-+        gui_name = config.get('gui', 'text')
+--- a/electrum/daemon.py
++++ b/electrum/daemon.py
+@@ -606,7 +606,7 @@
+         threading.current_thread().name = 'GUI'
+         gui_name = self.config.GUI_NAME
          if gui_name in ['lite', 'classic']:
-             gui_name = 'qt'
-         gui = __import__('electrum.gui.' + gui_name, fromlist=['electrum'])
---- ./setup.py.orig	2000-11-11 12:11:11.000000000 +0100
-+++ ./setup.py	2020-09-07 20:42:26.406766373 +0200
-@@ -73,7 +73,6 @@
-     packages=[
-         'electrum',
-         'electrum.gui',
--        'electrum.gui.qt',
-         'electrum.plugins',
-     ] + [('electrum.plugins.'+pkg) for pkg in find_packages('electrum/plugins')],
-     package_dir={
+-            gui_name = 'qt'
++            gui_name = 'text'
+         self._plugins = Plugins(self.config, gui_name)  # init plugins
+         self.logger.info(f'launching GUI: {gui_name}')
+         try:
+--- a/electrum/simple_config.py
++++ b/electrum/simple_config.py
+@@ -1061,7 +1061,7 @@
+     RPC_SOCKET_TYPE = ConfigVar('rpcsock', default='auto', type_=str)
+     RPC_SOCKET_FILEPATH = ConfigVar('rpcsockpath', default=None, type_=str)
+ 
+-    GUI_NAME = ConfigVar('gui', default='qt', type_=str)
++    GUI_NAME = ConfigVar('gui', default='text', type_=str)
+     GUI_LAST_WALLET = ConfigVar('gui_last_wallet', default=None, type_=str)
+ 
+     GUI_QT_COLOR_THEME = ConfigVar(

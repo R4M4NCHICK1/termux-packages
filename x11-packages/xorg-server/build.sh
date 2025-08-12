@@ -2,19 +2,23 @@ TERMUX_PKG_HOMEPAGE=https://xorg.freedesktop.org/wiki/
 TERMUX_PKG_DESCRIPTION="Xorg server"
 TERMUX_PKG_LICENSE="MIT"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=1.20.11
-TERMUX_PKG_REVISION=5
-TERMUX_PKG_SRCURL=https://xorg.freedesktop.org/releases/individual/xserver/xorg-server-${TERMUX_PKG_VERSION}.tar.bz2
-TERMUX_PKG_SHA256=914c796e3ffabe1af48071d40ccc85e92117c97a9082ed1df29e4d64e3c34c49
+TERMUX_PKG_VERSION="21.1.13"
+TERMUX_PKG_SRCURL=https://xorg.freedesktop.org/releases/individual/xserver/xorg-server-${TERMUX_PKG_VERSION}.tar.xz
+TERMUX_PKG_SHA256=b45a02d5943f72236a360d3cc97e75134aa4f63039ff88c04686b508a3dc740c
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_DEPENDS="libandroid-shmem, libdrm, libpciaccess, libpixman, libx11, libxau, libxcvt, libxfont2, libxinerama, libxkbfile, libxshmfence, opengl, openssl, xkeyboard-config, xorg-protocol-txt, xorg-xkbcomp"
 
-#i686 gives the following error...
-#relocation R_386_GOTOFF against preemptible symbol fbdevHWLoadPalette cannot be used when making a shared object
+# Needed for Xephyr
+TERMUX_PKG_BUILD_DEPENDS="xcb-util, xcb-util-image, xcb-util-keysyms, xcb-util-renderutil, xcb-util-wm"
 
-TERMUX_PKG_BLACKLISTED_ARCHES="i686"
+TERMUX_PKG_RECOMMENDS="xf86-video-dummy, xf86-input-void"
+TERMUX_PKG_NO_STATICSPLIT=true
 
-TERMUX_PKG_DEPENDS="libandroid-shmem, libdrm, libpciaccess, libpixman, libx11, libxau, libxfont2, libxinerama, libxkbfile, libxshmfence, mesa, openssl, xkeyboard-config, xorg-xkbcomp"
+# Provided by xorg-protocol-txt (subpackage of xorg-server-xvfb):
+TERMUX_PKG_RM_AFTER_INSTALL="lib/xorg/protocol.txt"
 
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
+ac_cv_path_RAWCPP=/usr/bin/cpp
 --enable-composite
 --enable-mitshm
 --enable-xres
@@ -24,10 +28,10 @@ TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 --enable-dga
 --enable-screensaver
 --enable-xdmcp
---disable-glx
+--enable-glx
 --disable-dri
 --disable-dri2
---disable-dri3
+--enable-dri3
 --enable-present
 --disable-tests
 --enable-xinerama
@@ -51,7 +55,7 @@ TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 --disable-xnest
 --disable-xwayland
 --disable-xwin
---disable-kdrive
+--enable-kdrive
 --enable-xephyr
 --disable-libunwind
 --enable-xshmfence
@@ -82,6 +86,7 @@ termux_step_pre_configure() {
 
 termux_step_post_make_install () {
 	rm -f "${TERMUX_PREFIX}/usr/share/X11/xkb/compiled"
+	install -Dm644 -t "$TERMUX_PREFIX/etc/X11/" "${TERMUX_PKG_BUILDER_DIR}/xorg.conf"
 }
 
 ## The following is required for package 'tigervnc'.
